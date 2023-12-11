@@ -16,7 +16,7 @@ namespace Server.Models
         public required bool Revoked { get; set; } = false;
 
         public virtual User? User { get; set; }
-        public virtual AccessToken? AccessToken { get; set; }
+        public virtual ICollection<AccessToken>? AccessTokens { get; set; }
     }
 }
 

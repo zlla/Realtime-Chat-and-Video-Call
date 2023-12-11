@@ -15,14 +15,13 @@ namespace Server.Auth
             _configuration = configuration;
         }
 
-        public (string, string) Generate(User user)
+        public object Generate(User user, bool includeRefreshToken = true)
         {
             // Create the claims for the JWT
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim(JwtRegisteredClaimNames.Name, user.Username),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.Username),
                 //new Claim(ClaimTypes.Role, "Admin")
             };
 
@@ -39,10 +38,16 @@ namespace Server.Auth
                 expires: DateTime.Now.AddMinutes(2),
                 signingCredentials: creds);
 
-            // Create the refresh token
-            var refreshTokenValue = Guid.NewGuid().ToString();
+            string at = new JwtSecurityTokenHandler().WriteToken(token);
 
-            return (new JwtSecurityTokenHandler().WriteToken(token), refreshTokenValue);
+            if (includeRefreshToken)
+            {
+                // Create the refresh token
+                var rt = Guid.NewGuid().ToString();
+                return (at, rt);
+            }
+
+            return at;
         }
 
         public ClaimsPrincipal? Validate(string accessToken, bool validateLifetimeParam = false)

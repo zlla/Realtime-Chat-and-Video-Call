@@ -148,8 +148,7 @@ namespace Server.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_AccessToken_RtId",
                 table: "AccessToken",
-                column: "RtId",
-                unique: true);
+                column: "RtId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Message_ConversationId",

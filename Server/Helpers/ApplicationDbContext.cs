@@ -30,7 +30,7 @@ public class ApplicationDbContext : DbContext
             .HasMany(u => u.RefreshTokens).WithOne(rt => rt.User).HasForeignKey(rt => rt.UserId);
 
         modelBuilder.Entity<RefreshToken>()
-            .HasOne(rt => rt.AccessToken).WithOne(at => at.RefreshToken).HasForeignKey<AccessToken>(at => at.RtId);
+            .HasMany(rt => rt.AccessTokens).WithOne(at => at.RefreshToken).HasForeignKey(at => at.RtId);
 
         modelBuilder.Entity<Participant>()
             .HasOne(p => p.User)

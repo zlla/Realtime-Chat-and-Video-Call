@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Server.Auth;
 using Server.Models;
 using Server.Helpers;
+using Microsoft.EntityFrameworkCore;
 
 namespace Server.Controllers
 {
@@ -22,13 +23,13 @@ namespace Server.Controllers
         }
 
         [HttpPost]
-        public IActionResult LoginPost([FromBody] UserLogin user)
+        public async Task<IActionResult> LoginPost([FromBody] UserLogin user)
         {
             if (user != null)
             {
                 if (!user.Username.IsNullOrEmpty() && !user.Password.IsNullOrEmpty())
                 {
-                    User? userFromDb = _db.Users.Where(u => u.Username == user.Username).FirstOrDefault();
+                    User? userFromDb = await _db.Users.Where(u => u.Username == user.Username).FirstOrDefaultAsync();
 
                     if (userFromDb == null)
                     {
@@ -40,46 +41,50 @@ namespace Server.Controllers
                     }
                     else
                     {
-                        (string accessTokenValue, string refreshTokenValue) = _authLibrary.Generate(userFromDb);
-
-                        RefreshToken refreshToken = new()
+                        var token = _authLibrary.Generate(userFromDb);
+                        if (token is (string at, string rt))
                         {
-                            Value = refreshTokenValue,
-                            UserId = userFromDb.Id,
-                            ExpirationDate = DateTime.Now.AddDays(7),
-                            Revoked = false,
-                        };
-                        _db.RefreshTokens.Add(refreshToken);
-                        _db.SaveChanges();
+                            (string accessTokenValue, string refreshTokenValue) = (at, rt);
 
-                        RefreshToken refreshTokenFromDb = _db.RefreshTokens.Where(r => r.Value == refreshTokenValue).First();
+                            RefreshToken refreshToken = new()
+                            {
+                                Value = refreshTokenValue,
+                                UserId = userFromDb.Id,
+                                ExpirationDate = DateTime.Now.AddDays(7),
+                                Revoked = false,
+                            };
+                            _db.RefreshTokens.Add(refreshToken);
+                            await _db.SaveChangesAsync();
 
-                        AccessToken accessToken = new()
-                        {
-                            Value = accessTokenValue,
-                            RtId = refreshTokenFromDb.Id,
-                            ExpirationDate = DateTime.Now.AddMinutes(2),
-                            Revoked = false,
-                        };
-                        _db.AccessTokens.Add(accessToken);
-                        _db.SaveChanges();
+                            RefreshToken refreshTokenFromDb = await _db.RefreshTokens.Where(r => r.Value == refreshTokenValue).FirstAsync();
 
-                        // Assign refresh token for cookies
-                        Response.Cookies.Append("refreshToken", refreshTokenValue, new CookieOptions()
-                        {
-                            HttpOnly = true,
-                            Secure = true,
-                            SameSite = SameSiteMode.None,
-                            Expires = DateTime.Now.AddDays(7)
-                        });
+                            AccessToken accessToken = new()
+                            {
+                                Value = accessTokenValue,
+                                RtId = refreshTokenFromDb.Id,
+                                ExpirationDate = DateTime.Now.AddMinutes(2),
+                                Revoked = false,
+                            };
+                            _db.AccessTokens.Add(accessToken);
+                            await _db.SaveChangesAsync();
 
-                        ReturnToken returnToken = new()
-                        {
-                            AccessToken = accessTokenValue.ToString(),
-                            RefreshToken = refreshTokenValue.ToString()
-                        };
+                            // Assign refresh token for cookies
+                            Response.Cookies.Append("refreshToken", refreshTokenValue, new CookieOptions()
+                            {
+                                HttpOnly = true,
+                                Secure = true,
+                                SameSite = SameSiteMode.None,
+                                Expires = DateTime.Now.AddDays(7)
+                            });
 
-                        return Ok(returnToken);
+                            ReturnToken returnToken = new()
+                            {
+                                AccessToken = accessTokenValue.ToString(),
+                                RefreshToken = refreshTokenValue.ToString()
+                            };
+
+                            return Ok(returnToken);
+                        }
                     }
                 }
             }

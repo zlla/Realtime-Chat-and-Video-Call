@@ -45,8 +45,7 @@ namespace Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RtId")
-                        .IsUnique();
+                    b.HasIndex("RtId");
 
                     b.ToTable("AccessToken");
                 });
@@ -207,8 +206,8 @@ namespace Server.Migrations
             modelBuilder.Entity("Server.Models.AccessToken", b =>
                 {
                     b.HasOne("Server.Models.RefreshToken", "RefreshToken")
-                        .WithOne("AccessToken")
-                        .HasForeignKey("Server.Models.AccessToken", "RtId")
+                        .WithMany("AccessTokens")
+                        .HasForeignKey("RtId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -273,7 +272,7 @@ namespace Server.Migrations
 
             modelBuilder.Entity("Server.Models.RefreshToken", b =>
                 {
-                    b.Navigation("AccessToken");
+                    b.Navigation("AccessTokens");
                 });
 
             modelBuilder.Entity("Server.Models.User", b =>
