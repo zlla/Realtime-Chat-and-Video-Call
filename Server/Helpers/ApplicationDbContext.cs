@@ -15,6 +15,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<AccessToken> Conversations { get; set; }
     public DbSet<AccessToken> Messages { get; set; }
     public DbSet<AccessToken> Participants { get; set; }
+    public DbSet<SignalRConnectionId> SignalRConnectionIds { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -28,6 +29,8 @@ public class ApplicationDbContext : DbContext
         //set relationships
         modelBuilder.Entity<User>()
             .HasMany(u => u.RefreshTokens).WithOne(rt => rt.User).HasForeignKey(rt => rt.UserId);
+        modelBuilder.Entity<User>()
+            .HasMany(u => u.SignalRConnectionIds).WithOne(s => s.User).HasForeignKey(s => s.UserId);
 
         modelBuilder.Entity<RefreshToken>()
             .HasMany(rt => rt.AccessTokens).WithOne(at => at.RefreshToken).HasForeignKey(at => at.RtId);
@@ -36,7 +39,6 @@ public class ApplicationDbContext : DbContext
             .HasOne(p => p.User)
             .WithMany(u => u.Participants)
             .HasForeignKey(p => p.UserId);
-
         modelBuilder.Entity<Participant>()
             .HasOne(p => p.Conversation)
             .WithMany(c => c.Participants)
@@ -46,7 +48,6 @@ public class ApplicationDbContext : DbContext
             .HasOne(m => m.Sender)
             .WithMany(u => u.SentMessages)
             .HasForeignKey(m => m.SenderId);
-
         modelBuilder.Entity<Message>()
             .HasOne(m => m.Conversation)
             .WithMany(c => c.Messages)

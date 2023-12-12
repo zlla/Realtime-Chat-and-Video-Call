@@ -124,6 +124,27 @@ namespace Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SignalRConnectionIds",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SignalRConnectionIds", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SignalRConnectionIds_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AccessToken",
                 columns: table => new
                 {
@@ -176,6 +197,11 @@ namespace Server.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_SignalRConnectionIds_UserId",
+                table: "SignalRConnectionIds",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
                 table: "Users",
                 column: "Email",
@@ -199,6 +225,9 @@ namespace Server.Migrations
 
             migrationBuilder.DropTable(
                 name: "Participant");
+
+            migrationBuilder.DropTable(
+                name: "SignalRConnectionIds");
 
             migrationBuilder.DropTable(
                 name: "RefreshTokens");

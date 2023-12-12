@@ -12,7 +12,7 @@ using Server.Helpers;
 namespace Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20231211140635_initDatabase")]
+    [Migration("20231212171406_initDatabase")]
     partial class initDatabase
     {
         /// <inheritdoc />
@@ -163,6 +163,31 @@ namespace Server.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
+            modelBuilder.Entity("Server.Models.SignalRConnectionId", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("SignalRConnectionIds");
+                });
+
             modelBuilder.Entity("Server.Models.User", b =>
                 {
                     b.Property<long>("Id")
@@ -266,6 +291,17 @@ namespace Server.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Server.Models.SignalRConnectionId", b =>
+                {
+                    b.HasOne("Server.Models.User", "User")
+                        .WithMany("SignalRConnectionIds")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Server.Models.Conversation", b =>
                 {
                     b.Navigation("Messages");
@@ -285,6 +321,8 @@ namespace Server.Migrations
                     b.Navigation("RefreshTokens");
 
                     b.Navigation("SentMessages");
+
+                    b.Navigation("SignalRConnectionIds");
                 });
 #pragma warning restore 612, 618
         }
