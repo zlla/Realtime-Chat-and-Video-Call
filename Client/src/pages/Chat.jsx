@@ -1,23 +1,46 @@
-import { useEffect, useState } from "react";
-import * as signalR from "@microsoft/signalr";
+import axios from "axios";
+import { any } from "prop-types";
+import { useEffect } from "react";
+// import * as signalR from "@microsoft/signalr";
+import { useNavigate } from "react-router";
+import { apiUrl } from "../settings/support";
 
-function ChatPage() {
-  const [connection, setConnection] = useState(null);
+function Chat(props) {
+  const { connection } = props;
+  // const [connection, setConnection] = useState(null);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl("http://localhost:5145/chathub")
-      .build();
-
-    setConnection(newConnection);
-
-    return () => {
-      // Cleanup: Stop the connection when the component is unmounted
-      if (newConnection) {
-        newConnection.stop().catch((err) => console.error(err.toString()));
-      }
+  const saveConnectionId = async (SId) => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
     };
-  }, []);
+
+    const bodyParameters = {
+      SId: SId,
+    };
+
+    try {
+      axios.post(`${apiUrl}/chatHub/saveSignalRId`, bodyParameters, config);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // useEffect(() => {
+  //   const newConnection = new signalR.HubConnectionBuilder()
+  //     .withUrl("http://localhost:5145/chathub")
+  //     .build();
+
+  //   setConnection(newConnection);
+
+  //   return () => {
+  //     if (newConnection) {
+  //       newConnection.stop().catch((err) => console.error(err.toString()));
+  //     }
+  //   };
+  // }, []);
 
   useEffect(() => {
     if (connection) {
@@ -32,6 +55,7 @@ function ChatPage() {
       });
 
       connection.on("UserConnected", function (connectionId) {
+        saveConnectionId(connectionId);
         var groupElement = document.getElementById("group");
         var option = document.createElement("option");
         option.text = connectionId;
@@ -121,8 +145,20 @@ function ChatPage() {
       />
 
       <div id="messages"></div>
+
+      <button
+        onClick={() => {
+          navigate("/");
+        }}
+      >
+        home
+      </button>
     </div>
   );
 }
 
-export default ChatPage;
+Chat.propTypes = {
+  connection: any,
+};
+
+export default Chat;
