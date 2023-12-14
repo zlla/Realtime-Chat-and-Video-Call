@@ -1,12 +1,11 @@
 import axios from "axios";
 import { useNavigate } from "react-router";
-import { any, func } from "prop-types";
-import * as signalR from "@microsoft/signalr";
+import { func } from "prop-types";
 
 import { apiUrl } from "../../settings/support";
 
 const Login = (props) => {
-  const { setAuth, setConnection } = props;
+  const { setAuth } = props;
   const navigate = useNavigate();
 
   const handleLogin = async () => {
@@ -20,11 +19,6 @@ const Login = (props) => {
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
 
-      const newConnection = new signalR.HubConnectionBuilder()
-        .withUrl("http://localhost:5145/chathub")
-        .build();
-
-      setConnection(newConnection);
       navigate("/chat");
     } catch (error) {
       setAuth(false);
@@ -41,7 +35,6 @@ const Login = (props) => {
 
 Login.propTypes = {
   setAuth: func,
-  setConnection: any,
 };
 
 export default Login;

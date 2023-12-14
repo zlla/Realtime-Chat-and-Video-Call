@@ -1,13 +1,12 @@
 import axios from "axios";
-import { any } from "prop-types";
-import { useEffect } from "react";
-// import * as signalR from "@microsoft/signalr";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import * as signalR from "@microsoft/signalr";
+
 import { apiUrl } from "../settings/support";
 
-function Chat(props) {
-  const { connection } = props;
-  // const [connection, setConnection] = useState(null);
+function Chat() {
+  const [connection, setConnection] = useState();
   const navigate = useNavigate();
 
   const saveConnectionId = async (SId) => {
@@ -28,19 +27,20 @@ function Chat(props) {
     }
   };
 
-  // useEffect(() => {
-  //   const newConnection = new signalR.HubConnectionBuilder()
-  //     .withUrl("http://localhost:5145/chathub")
-  //     .build();
+  useEffect(() => {
+    const newConnection = new signalR.HubConnectionBuilder()
+      .withUrl(`${apiUrl}/chatHub`)
+      .build();
 
-  //   setConnection(newConnection);
+    setConnection(newConnection);
 
-  //   return () => {
-  //     if (newConnection) {
-  //       newConnection.stop().catch((err) => console.error(err.toString()));
-  //     }
-  //   };
-  // }, []);
+    return () => {
+      // Cleanup: Stop the connection when the component is unmounted
+      if (newConnection) {
+        newConnection.stop().catch((err) => console.error(err.toString()));
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (connection) {
@@ -156,9 +156,5 @@ function Chat(props) {
     </div>
   );
 }
-
-Chat.propTypes = {
-  connection: any,
-};
 
 export default Chat;

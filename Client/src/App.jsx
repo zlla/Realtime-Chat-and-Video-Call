@@ -7,26 +7,16 @@ import Home from "./pages/Home";
 
 function App() {
   const [auth, setAuth] = useState(false);
-  const [connection, setConnection] = useState(null);
 
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<ShareLayout />}>
           <Route path="/" element={<Home auth={auth} setAuth={setAuth} />} />
-          <Route
-            path="login"
-            element={<Login setAuth={setAuth} setConnection={setConnection} />}
-          />
+          <Route path="login" element={<Login setAuth={setAuth} />} />
           <Route
             path="chat"
-            element={
-              auth ? (
-                <Chat auth={auth} connection={connection} />
-              ) : (
-                <Navigate to="/login" />
-              )
-            }
+            element={auth ? <Chat auth={auth} /> : <Navigate to="/login" />}
           />
         </Route>
       </Routes>
