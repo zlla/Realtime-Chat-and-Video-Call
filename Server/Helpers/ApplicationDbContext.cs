@@ -12,9 +12,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<AccessToken> AccessTokens { get; set; }
-    public DbSet<AccessToken> Conversations { get; set; }
-    public DbSet<AccessToken> Messages { get; set; }
-    public DbSet<AccessToken> Participants { get; set; }
+    public DbSet<Conversation> Conversations { get; set; }
+    public DbSet<Message> Messages { get; set; }
+    public DbSet<Participant> Participants { get; set; }
     public DbSet<SignalRConnectionId> SignalRConnectionIds { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

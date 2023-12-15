@@ -12,7 +12,7 @@ namespace Server.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Conversation",
+                name: "Conversations",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -22,7 +22,7 @@ namespace Server.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Conversation", x => x.Id);
+                    table.PrimaryKey("PK_Conversations", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -45,7 +45,7 @@ namespace Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Message",
+                name: "Messages",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -58,15 +58,15 @@ namespace Server.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Message", x => x.Id);
+                    table.PrimaryKey("PK_Messages", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Message_Conversation_ConversationId",
+                        name: "FK_Messages_Conversations_ConversationId",
                         column: x => x.ConversationId,
-                        principalTable: "Conversation",
+                        principalTable: "Conversations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Message_Users_SenderId",
+                        name: "FK_Messages_Users_SenderId",
                         column: x => x.SenderId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -74,7 +74,7 @@ namespace Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Participant",
+                name: "Participants",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -86,15 +86,15 @@ namespace Server.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Participant", x => x.Id);
+                    table.PrimaryKey("PK_Participants", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Participant_Conversation_ConversationId",
+                        name: "FK_Participants_Conversations_ConversationId",
                         column: x => x.ConversationId,
-                        principalTable: "Conversation",
+                        principalTable: "Conversations",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Participant_Users_UserId",
+                        name: "FK_Participants_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -145,7 +145,7 @@ namespace Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AccessToken",
+                name: "AccessTokens",
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
@@ -157,9 +157,9 @@ namespace Server.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AccessToken", x => x.Id);
+                    table.PrimaryKey("PK_AccessTokens", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AccessToken_RefreshTokens_RtId",
+                        name: "FK_AccessTokens_RefreshTokens_RtId",
                         column: x => x.RtId,
                         principalTable: "RefreshTokens",
                         principalColumn: "Id",
@@ -167,28 +167,28 @@ namespace Server.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_AccessToken_RtId",
-                table: "AccessToken",
+                name: "IX_AccessTokens_RtId",
+                table: "AccessTokens",
                 column: "RtId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Message_ConversationId",
-                table: "Message",
+                name: "IX_Messages_ConversationId",
+                table: "Messages",
                 column: "ConversationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Message_SenderId",
-                table: "Message",
+                name: "IX_Messages_SenderId",
+                table: "Messages",
                 column: "SenderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Participant_ConversationId",
-                table: "Participant",
+                name: "IX_Participants_ConversationId",
+                table: "Participants",
                 column: "ConversationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Participant_UserId",
-                table: "Participant",
+                name: "IX_Participants_UserId",
+                table: "Participants",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
@@ -218,13 +218,13 @@ namespace Server.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "AccessToken");
+                name: "AccessTokens");
 
             migrationBuilder.DropTable(
-                name: "Message");
+                name: "Messages");
 
             migrationBuilder.DropTable(
-                name: "Participant");
+                name: "Participants");
 
             migrationBuilder.DropTable(
                 name: "SignalRConnectionIds");
@@ -233,7 +233,7 @@ namespace Server.Migrations
                 name: "RefreshTokens");
 
             migrationBuilder.DropTable(
-                name: "Conversation");
+                name: "Conversations");
 
             migrationBuilder.DropTable(
                 name: "Users");

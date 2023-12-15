@@ -12,7 +12,7 @@ using Server.Helpers;
 namespace Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20231212171406_initDatabase")]
+    [Migration("20231215131947_initDatabase")]
     partial class initDatabase
     {
         /// <inheritdoc />
@@ -50,7 +50,7 @@ namespace Server.Migrations
 
                     b.HasIndex("RtId");
 
-                    b.ToTable("AccessToken");
+                    b.ToTable("AccessTokens");
                 });
 
             modelBuilder.Entity("Server.Models.Conversation", b =>
@@ -69,7 +69,7 @@ namespace Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Conversation");
+                    b.ToTable("Conversations");
                 });
 
             modelBuilder.Entity("Server.Models.Message", b =>
@@ -103,7 +103,7 @@ namespace Server.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("Message");
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("Server.Models.Participant", b =>
@@ -132,7 +132,7 @@ namespace Server.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Participant");
+                    b.ToTable("Participants");
                 });
 
             modelBuilder.Entity("Server.Models.RefreshToken", b =>
