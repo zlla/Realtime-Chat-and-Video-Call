@@ -67,10 +67,81 @@ namespace Server.Controllers
 
             return BadRequest();
         }
+
+        [HttpGet("getSignalRId")]
+        public async Task<IActionResult> GetSignalRId([FromBody] GetSignalRIdRequest getSignalRIdRequest)
+        {
+            if (!string.IsNullOrEmpty(getSignalRIdRequest.Username))
+            {
+
+                User? user = await _db.Users.Where(u => u.Username == getSignalRIdRequest.Username).FirstOrDefaultAsync();
+                if (user != null)
+                {
+                    SignalRConnectionId? signalRConnectionId = await _db.SignalRConnectionIds
+                        .Where(s => s.UserId == user.Id)
+                        .OrderByDescending(x => x.CreationTime)
+                        .FirstOrDefaultAsync();
+                    if (signalRConnectionId != null)
+                    {
+                        return Ok(signalRConnectionId.Value);
+                    }
+                    else
+                    {
+                        return NotFound();
+                    }
+                }
+
+            }
+
+            return BadRequest("Invalid Username");
+        }
+
+        [HttpGet("getAll")]
+        public async Task<IActionResult> GetAllUserAndSignalRId()
+        {
+            List<GetAllUserAndSignalRIdReturn>? list = new();
+            List<User>? userList = new();
+            userList = await _db.Users.ToListAsync();
+
+            if (userList.Count > 0)
+            {
+                foreach (var user in userList)
+                {
+                    SignalRConnectionId? signalRConnectionId = await _db.SignalRConnectionIds
+                        .Where(s => s.UserId == user.Id)
+                        .OrderByDescending(x => x.CreationTime)
+                        .FirstOrDefaultAsync();
+
+                    if (signalRConnectionId != null)
+                    {
+                        GetAllUserAndSignalRIdReturn temp = new()
+                        {
+                            Username = user.Username,
+                            SignalRId = signalRConnectionId.Value
+                        };
+
+                        list.Add(temp);
+                    }
+                }
+            }
+
+            return Ok(list);
+        }
     }
 
     public class SaveSignalRIdRequest
     {
         public required string SId { get; set; }
+    }
+
+    public class GetSignalRIdRequest
+    {
+        public required string Username { get; set; }
+    }
+
+    public class GetAllUserAndSignalRIdReturn
+    {
+        public required string Username { get; set; }
+        public required string SignalRId { get; set; }
     }
 }
