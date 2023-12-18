@@ -8,6 +8,10 @@ import { apiUrl } from "../settings/support";
 function Chat() {
   const [connection, setConnection] = useState();
   const navigate = useNavigate();
+  const [userAndSignalRIdList, setUserAndSignalRIdList] = useState([]);
+  const [toggleConversation, setToggleConversation] = useState(false);
+  const [signalRId, setSignalRId] = useState();
+  const [message, setMessage] = useState();
 
   const saveConnectionId = async (SId) => {
     const config = {
@@ -18,10 +22,31 @@ function Chat() {
 
     const bodyParameters = {
       SId: SId,
+      Username: localStorage.getItem("username"),
     };
 
     try {
-      axios.post(`${apiUrl}/chatHub/saveSignalRId`, bodyParameters, config);
+      await axios.post(
+        `${apiUrl}/chatHub/saveSignalRId`,
+        bodyParameters,
+        config
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getAllUserAndSignalRId = async () => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    };
+
+    try {
+      const response = await axios.get(`${apiUrl}/chatHub/getAll`, config);
+      const dataArray = Object.values(response.data);
+      setUserAndSignalRIdList(dataArray);
     } catch (error) {
       console.log(error);
     }
@@ -33,6 +58,8 @@ function Chat() {
       .build();
 
     setConnection(newConnection);
+
+    getAllUserAndSignalRId();
 
     return () => {
       // Cleanup: Stop the connection when the component is unmounted
@@ -54,13 +81,13 @@ function Chat() {
         document.getElementById("messages").appendChild(div);
       });
 
-      connection.on("UserConnected", function (connectionId) {
-        saveConnectionId(connectionId);
-        var groupElement = document.getElementById("group");
-        var option = document.createElement("option");
-        option.text = connectionId;
-        option.value = connectionId;
-        groupElement.add(option);
+      connection.on("UserConnected", function () {
+        getAllUserAndSignalRId();
+        // var groupElement = document.getElementById("group");
+        // var option = document.createElement("option");
+        // option.text = connectionId;
+        // option.value = connectionId;
+        // groupElement.add(option);
       });
 
       connection.on("UserDisconnected", function (connectionId) {
@@ -72,7 +99,12 @@ function Chat() {
         }
       });
 
-      connection.start().catch((err) => console.error(err.toString()));
+      connection
+        .start()
+        .then(() => {
+          saveConnectionId(connection.connectionId);
+        })
+        .catch((err) => console.error(err.toString()));
     }
 
     // Cleanup: Remove event listeners when the component is unmounted
@@ -124,6 +156,39 @@ function Chat() {
   return (
     <div>
       <div>
+        {userAndSignalRIdList.map((item) => (
+          <div key={item.username}>
+            <button
+              onClick={() => {
+                setToggleConversation(true);
+                setSignalRId(item.signalRId);
+              }}
+            >
+              {item.username}---{item.signalRId}
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {toggleConversation && (
+        <div>
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <button
+            onClick={() => {
+              sendMessage(message, signalRId);
+              setMessage("");
+            }}
+          >
+            Send
+          </button>
+        </div>
+      )}
+
+      {/* <div>
         <input
           type="button"
           onClick={handleJoinGroupClick}
@@ -142,7 +207,7 @@ function Chat() {
         type="button"
         onClick={handleSendButtonClick}
         value="Send Message"
-      />
+      /> */}
 
       <div id="messages"></div>
 

@@ -21,6 +21,7 @@ const Login = (props) => {
 
     const bodyParameters = {
       SId: SId,
+      Username: username,
     };
 
     try {
@@ -40,6 +41,7 @@ const Login = (props) => {
       const { accessToken, refreshToken } = response.data;
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
+      localStorage.setItem("username", username);
 
       if (connection) {
         connection
