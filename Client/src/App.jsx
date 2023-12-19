@@ -4,6 +4,7 @@ import { useState } from "react";
 import Login from "./pages/auth/Login";
 import ShareLayout from "./pages/ShareLayout";
 import Home from "./pages/Home";
+import Register from "./pages/auth/Register";
 
 function App() {
   const [auth, setAuth] = useState(false);
@@ -13,6 +14,7 @@ function App() {
       <Routes>
         <Route element={<ShareLayout />}>
           <Route path="/" element={<Home auth={auth} setAuth={setAuth} />} />
+          <Route path="register" element={<Register />} />
           <Route path="login" element={<Login setAuth={setAuth} />} />
           <Route
             path="chat"

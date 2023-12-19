@@ -1,90 +1,66 @@
 import axios from "axios";
 import { useNavigate } from "react-router";
 import { func } from "prop-types";
-import * as signalR from "@microsoft/signalr";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { apiUrl } from "../../settings/support";
 
 const Login = (props) => {
   const { setAuth } = props;
+  const navigate = useNavigate("");
   const [username, setUsername] = useState("");
-  const [connection, setConnection] = useState();
-  const navigate = useNavigate();
+  const [password, setPassword] = useState("");
 
-  const saveConnectionId = async (SId) => {
-    const config = {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-      },
-    };
+  const handleLoginForm = async (e) => {
+    e.preventDefault();
 
-    const bodyParameters = {
-      SId: SId,
-      Username: username,
-    };
-
-    try {
-      axios.post(`${apiUrl}/chatHub/saveSignalRId`, bodyParameters, config);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  const handleLogin = async () => {
     try {
       const response = await axios.post(`${apiUrl}/login`, {
-        username: username,
-        password: "12345",
+        username,
+        password,
       });
       setAuth(true);
       const { accessToken, refreshToken } = response.data;
       localStorage.setItem("accessToken", accessToken);
       localStorage.setItem("refreshToken", refreshToken);
       localStorage.setItem("username", username);
-
-      if (connection) {
-        connection
-          .start()
-          .then(() => {
-            // Save the SignalR connection id
-            saveConnectionId(connection.connectionId);
-            navigate("/chat");
-          })
-          .catch((err) =>
-            console.error("Error starting SignalR connection:", err)
-          );
-      }
+      navigate("/chat");
     } catch (error) {
       setAuth(false);
       console.error(error);
     }
   };
 
-  useEffect(() => {
-    const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl(`${apiUrl}/chatHub`)
-      .build();
-
-    setConnection(newConnection);
-
-    return () => {
-      if (newConnection) {
-        newConnection.stop().catch((err) => console.error(err.toString()));
-      }
-    };
-  }, []);
-
   return (
     <div>
-      <input
-        type="text"
-        value={username}
-        onChange={(e) => {
-          setUsername(e.target.value);
-        }}
-      />
-      <button onClick={() => handleLogin()}>login</button>
+      <form>
+        <label htmlFor="username">Username</label>
+        <input
+          type="text"
+          name="username"
+          id="username"
+          value={username}
+          onChange={(e) => {
+            setUsername(e.target.value);
+          }}
+        />
+        <br />
+
+        <label htmlFor="password">Password</label>
+        <input
+          type="password"
+          name="password"
+          id="password"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+          }}
+        />
+        <br />
+
+        <button onClick={(e) => handleLoginForm(e)}>Submit</button>
+      </form>
+      <button onClick={() => navigate("/register")}>Move to Register</button>
     </div>
   );
 };

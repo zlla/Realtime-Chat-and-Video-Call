@@ -6,8 +6,8 @@ import * as signalR from "@microsoft/signalr";
 import { apiUrl } from "../settings/support";
 
 function Chat() {
-  const [connection, setConnection] = useState();
   const navigate = useNavigate();
+  const [connection, setConnection] = useState();
   const [userAndSignalRIdList, setUserAndSignalRIdList] = useState([]);
   const [toggleConversation, setToggleConversation] = useState(false);
   const [signalRId, setSignalRId] = useState();
@@ -83,11 +83,6 @@ function Chat() {
 
       connection.on("UserConnected", function () {
         getAllUserAndSignalRId();
-        // var groupElement = document.getElementById("group");
-        // var option = document.createElement("option");
-        // option.text = connectionId;
-        // option.value = connectionId;
-        // groupElement.add(option);
       });
 
       connection.on("UserDisconnected", function (connectionId) {
@@ -160,18 +155,21 @@ function Chat() {
           <div key={item.username}>
             <button
               onClick={() => {
-                setToggleConversation(true);
                 setSignalRId(item.signalRId);
+                setToggleConversation(true);
               }}
             >
-              {item.username}---{item.signalRId}
+              {item.username} {item.signalRId}
             </button>
           </div>
         ))}
+        <br />
       </div>
 
       {toggleConversation && (
         <div>
+          <button onClick={() => setToggleConversation(false)}>Close</button>
+          <br />
           <input
             type="text"
             value={message}
