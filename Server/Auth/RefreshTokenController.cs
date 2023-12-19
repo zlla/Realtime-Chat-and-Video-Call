@@ -9,7 +9,7 @@ using System.Security.Claims;
 namespace Server.Controllers
 {
     [ApiController]
-    [Route("api/auth/refresh-token")]
+    [Route("api/auth/refreshToken")]
     [Authorize]
     public class RefreshTokenController : Controller
     {

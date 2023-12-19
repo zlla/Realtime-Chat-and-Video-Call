@@ -12,6 +12,8 @@ const Home = (props) => {
         <button
           onClick={() => {
             setAuth(false);
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
           }}
         >
           Logout
