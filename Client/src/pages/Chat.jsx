@@ -4,14 +4,17 @@ import { useNavigate } from "react-router";
 import * as signalR from "@microsoft/signalr";
 
 import { apiUrl } from "../settings/support";
+import Conversation from "../components/Conversation";
 
 function Chat() {
   const navigate = useNavigate();
   const [connection, setConnection] = useState();
   const [userAndSignalRIdList, setUserAndSignalRIdList] = useState([]);
+  const [groupList, setGroupList] = useState([]);
   const [toggleConversation, setToggleConversation] = useState(false);
-  const [signalRId, setSignalRId] = useState();
-  const [message, setMessage] = useState();
+  const [signalRId, setSignalRId] = useState("");
+  const [message, setMessage] = useState("");
+  const [isGroup, setIsGroup] = useState(false);
 
   const saveSignalRsId = async (SId) => {
     const config = {
@@ -67,9 +70,32 @@ function Chat() {
         config
       );
       const dataArray = Object.values(response.data);
-      console.log(dataArray);
+      setGroupList(dataArray);
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  const sendMessage = (message, id, isGroup) => {
+    if (!connection) return;
+
+    if (isGroup) {
+      connection
+        .invoke("SendMessageToGroup", id, message)
+        .catch((err) => console.error(err.toString()));
+
+      return;
+    }
+
+    if (id === "All" || id === "Myself") {
+      const method = id === "All" ? "SendMessageToAll" : "SendMessageToCaller";
+      connection
+        .invoke(method, message)
+        .catch((err) => console.error(err.toString()));
+    } else {
+      connection
+        .invoke("SendMessageToUser", id, message)
+        .catch((err) => console.error(err.toString()));
     }
   };
 
@@ -79,9 +105,6 @@ function Chat() {
       .build();
 
     setConnection(newConnection);
-
-    fetchAllDuoConversationInfo();
-    fetchAllGroupConversationInfo();
 
     return () => {
       // Cleanup: Stop the connection when the component is unmounted
@@ -107,19 +130,25 @@ function Chat() {
         fetchAllDuoConversationInfo();
       });
 
-      connection.on("UserDisconnected", function (connectionId) {
-        var groupElement = document.getElementById("group");
-        for (var i = 0; i < groupElement.length; i++) {
-          if (groupElement.options[i].value === connectionId) {
-            groupElement.remove(i);
-          }
-        }
+      connection.on("NewGroup", function () {
+        fetchAllGroupConversationInfo();
       });
+
+      // connection.on("UserDisconnected", function (connectionId) {
+      //   var groupElement = document.getElementById("group");
+      //   for (var i = 0; i < groupElement.length; i++) {
+      //     if (groupElement.options[i].value === connectionId) {
+      //       groupElement.remove(i);
+      //     }
+      //   }
+      // });
 
       connection
         .start()
         .then(() => {
           saveSignalRsId(connection.connectionId);
+          fetchAllDuoConversationInfo();
+          fetchAllGroupConversationInfo();
         })
         .catch((err) => console.error(err.toString()));
     }
@@ -134,41 +163,21 @@ function Chat() {
     };
   }, [connection]);
 
-  const sendMessage = (message, groupValue) => {
-    if (!connection) return;
+  useEffect(() => {
+    const handleJoinGroup = (groupName) => {
+      if (connection && connection.state === "Connected") {
+        connection
+          .invoke("JoinGroup", groupName)
+          .catch((err) => console.error(err.toString()));
+      }
+    };
 
-    if (groupValue === "All" || groupValue === "Myself") {
-      const method =
-        groupValue === "All" ? "SendMessageToAll" : "SendMessageToCaller";
-      connection
-        .invoke(method, message)
-        .catch((err) => console.error(err.toString()));
-    } else if (groupValue === "PrivateGroup") {
-      connection
-        .invoke("SendMessageToGroup", "PrivateGroup", message)
-        .catch((err) => console.error(err.toString()));
-    } else {
-      connection
-        .invoke("SendMessageToUser", groupValue, message)
-        .catch((err) => console.error(err.toString()));
+    if (groupList.length > 0) {
+      groupList.forEach((group) => {
+        handleJoinGroup(group.groupId.toString());
+      });
     }
-  };
-
-  const handleSendButtonClick = () => {
-    const message = document.getElementById("message").value;
-    const groupElement = document.getElementById("group");
-    const groupValue = groupElement.options[groupElement.selectedIndex].value;
-
-    sendMessage(message, groupValue);
-  };
-
-  const handleJoinGroupClick = () => {
-    if (connection) {
-      connection
-        .invoke("JoinGroup", "PrivateGroup")
-        .catch((err) => console.error(err.toString()));
-    }
-  };
+  }, [groupList, connection]);
 
   return (
     <div>
@@ -179,6 +188,7 @@ function Chat() {
             <button
               onClick={() => {
                 setSignalRId(item.signalRId);
+                setIsGroup(false);
                 setToggleConversation(true);
               }}
             >
@@ -186,7 +196,22 @@ function Chat() {
             </button>
           </div>
         ))}
-        <br />
+        <hr />
+      </div>
+      <div>
+        {groupList.map((item) => (
+          <div key={item.groupId}>
+            <button
+              onClick={() => {
+                setSignalRId(item.groupId.toString());
+                setIsGroup(true);
+                setToggleConversation(true);
+              }}
+            >
+              {item.groupName}
+            </button>
+          </div>
+        ))}
       </div>
 
       {toggleConversation && (
@@ -200,7 +225,7 @@ function Chat() {
           />
           <button
             onClick={() => {
-              sendMessage(message, signalRId);
+              sendMessage(message, signalRId, isGroup);
               setMessage("");
             }}
           >
@@ -209,28 +234,8 @@ function Chat() {
         </div>
       )}
 
-      {/* <div>
-        <input
-          type="button"
-          onClick={handleJoinGroupClick}
-          value="Join Private Group"
-        />
-      </div>
-
-      <textarea name="message" id="message"></textarea>
-      <br />
-      <select id="group">
-        <option value="All">Everyone</option>
-        <option value="Myself">Myself</option>
-        <option value="PrivateGroup">Private Group</option>
-      </select>
-      <input
-        type="button"
-        onClick={handleSendButtonClick}
-        value="Send Message"
-      /> */}
-
-      <div id="messages"></div>
+      {/* <div id="messages"></div> */}
+      <Conversation />
 
       <button
         onClick={() => {
