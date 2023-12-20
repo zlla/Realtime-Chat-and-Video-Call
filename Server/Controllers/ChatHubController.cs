@@ -26,10 +26,22 @@ namespace Server.Controllers
         public async Task<IActionResult> SaveSignalRId([FromBody] SaveSignalRIdRequest saveSignalRIdRequest)
         {
             var sId = saveSignalRIdRequest.SId;
-            var username = saveSignalRIdRequest.Username;
-            if (!string.IsNullOrEmpty(sId) && !string.IsNullOrEmpty(username))
+            // Get the access token from the authorization header
+            string? accessToken = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            if (string.IsNullOrEmpty(accessToken))
             {
-                User? userFromDb = await _db.Users.Where(u => u.Username == username).FirstOrDefaultAsync();
+                return BadRequest("Access token is required");
+            }
+            var principal = _authLibrary.Validate(accessToken);
+            if (principal == null)
+            {
+                return BadRequest("Invalid access token");
+            }
+            // Get the user's name from the access token claims
+            string? userName = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            if (!string.IsNullOrEmpty(sId) && !string.IsNullOrEmpty(userName))
+            {
+                User? userFromDb = await _db.Users.Where(u => u.Username == userName).FirstOrDefaultAsync();
                 if (userFromDb == null)
                 {
                     return NotFound("User not found");
@@ -79,8 +91,8 @@ namespace Server.Controllers
             return BadRequest("Invalid Username");
         }
 
-        [HttpGet("getAll")]
-        public async Task<IActionResult> GetAllUserAndSignalRId()
+        [HttpGet("getAllDuoConversationInfo")]
+        public async Task<IActionResult> GetAllDuoConversationInfo()
         {
             // Get the access token from the authorization header
             string? accessToken = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
@@ -108,7 +120,7 @@ namespace Server.Controllers
                 return NotFound("User not found");
             }
 
-            List<GetAllUserAndSignalRIdReturn>? list = new();
+            List<GetAllDuoConversationInfoReturn>? list = new();
             List<User>? userList = new();
             userList = await _db.Users.ToListAsync();
 
@@ -125,7 +137,7 @@ namespace Server.Controllers
 
                         if (signalRConnectionId != null)
                         {
-                            GetAllUserAndSignalRIdReturn temp = new()
+                            GetAllDuoConversationInfoReturn temp = new()
                             {
                                 Username = user.Username,
                                 SignalRId = signalRConnectionId.Value
@@ -139,12 +151,69 @@ namespace Server.Controllers
 
             return Ok(list);
         }
+
+        [HttpGet("getAllGroupConversationInfo")]
+        public async Task<IActionResult> GetAllGroupConversationInfo()
+        {
+            // Get the access token from the authorization header
+            string? accessToken = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                return BadRequest("Access token is required");
+            }
+            var principal = _authLibrary.Validate(accessToken);
+            if (principal == null)
+            {
+                return BadRequest("Invalid access token");
+            }
+            // Get the user's name from the access token claims
+            string? userName = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            if (!string.IsNullOrEmpty(userName))
+            {
+                User? user = await _db.Users.Where(u => u.Username == userName).FirstOrDefaultAsync();
+                if (user != null)
+                {
+                    List<GetAllGroupConversationInfoReturn>? list = new();
+                    List<Participant> participants = await _db.Participants.Where(p => p.UserId == user.Id).ToListAsync();
+                    List<GetAllGroupConversationInfoReturn> conversationsReturn = new();
+
+                    if (participants.Count > 0)
+                    {
+                        List<Conversation> conversations = new();
+
+                        foreach (var item in participants)
+                        {
+                            conversations.Add(await _db.Conversations.Where(c => c.Id == item.ConversationId).FirstAsync());
+                        }
+
+                        if (conversations.Count > 0)
+                        {
+
+                            foreach (var item in conversations)
+                            {
+                                if (item.ConversationType == "group")
+                                {
+                                    conversationsReturn.Add(new GetAllGroupConversationInfoReturn
+                                    {
+                                        GroupId = item.Id,
+                                        GroupName = item.ConversationName
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    return Ok(conversationsReturn);
+                }
+            }
+
+            return BadRequest();
+        }
     }
 
     public class SaveSignalRIdRequest
     {
         public required string SId { get; set; }
-        public required string Username { get; set; }
     }
 
     public class GetSignalRIdRequest
@@ -152,9 +221,15 @@ namespace Server.Controllers
         public required string Username { get; set; }
     }
 
-    public class GetAllUserAndSignalRIdReturn
+    public class GetAllDuoConversationInfoReturn
     {
         public required string Username { get; set; }
         public required string SignalRId { get; set; }
+    }
+
+    public class GetAllGroupConversationInfoReturn
+    {
+        public required long GroupId { get; set; }
+        public string? GroupName { get; set; }
     }
 }

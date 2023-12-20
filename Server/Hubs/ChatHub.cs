@@ -71,7 +71,7 @@ namespace Server.Hubs
                     {
                         if (conversation.Participants != null)
                         {
-                            if (conversation.Participants.Count == 2 && conversation.ConversationName == "duo")
+                            if (conversation.Participants.Count == 2 && conversation.ConversationType == "duo")
                             {
                                 duoConversation = conversation;
                             }
@@ -97,7 +97,7 @@ namespace Server.Hubs
                 {
                     Conversation newConversation = new()
                     {
-                        ConversationName = "duo",
+                        ConversationType = "duo",
                         CreatedAt = DateTime.Now
                     };
 

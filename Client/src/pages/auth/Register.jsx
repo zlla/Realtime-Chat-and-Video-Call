@@ -12,7 +12,7 @@ const Register = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const saveConnectionId = async (SId, accessToken) => {
+  const saveSignalRId = async (SId, accessToken) => {
     const config = {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -21,7 +21,6 @@ const Register = () => {
 
     const bodyParameters = {
       SId,
-      username,
     };
 
     try {
@@ -50,10 +49,7 @@ const Register = () => {
           .start()
           .then(() => {
             // Save the SignalR connection id
-            saveConnectionId(
-              connection.connectionId,
-              response.data.accessToken
-            );
+            saveSignalRId(connection.connectionId, response.data.accessToken);
             navigate("/login");
           })
           .catch((err) =>

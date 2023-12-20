@@ -61,6 +61,10 @@ namespace Server.Migrations
                     b.Property<string>("ConversationName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ConversationType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 

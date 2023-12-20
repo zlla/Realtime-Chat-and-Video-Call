@@ -13,7 +13,7 @@ function Chat() {
   const [signalRId, setSignalRId] = useState();
   const [message, setMessage] = useState();
 
-  const saveConnectionId = async (SId) => {
+  const saveSignalRsId = async (SId) => {
     const config = {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
@@ -22,7 +22,6 @@ function Chat() {
 
     const bodyParameters = {
       SId: SId,
-      Username: localStorage.getItem("username"),
     };
 
     try {
@@ -36,7 +35,7 @@ function Chat() {
     }
   };
 
-  const getAllUserAndSignalRId = async () => {
+  const fetchAllDuoConversationInfo = async () => {
     const config = {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
@@ -44,9 +43,31 @@ function Chat() {
     };
 
     try {
-      const response = await axios.get(`${apiUrl}/chatHub/getAll`, config);
+      const response = await axios.get(
+        `${apiUrl}/chatHub/getAllDuoConversationInfo`,
+        config
+      );
       const dataArray = Object.values(response.data);
       setUserAndSignalRIdList(dataArray);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const fetchAllGroupConversationInfo = async () => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    };
+
+    try {
+      const response = await axios.get(
+        `${apiUrl}/chatHub/getAllGroupConversationInfo`,
+        config
+      );
+      const dataArray = Object.values(response.data);
+      console.log(dataArray);
     } catch (error) {
       console.log(error);
     }
@@ -59,7 +80,8 @@ function Chat() {
 
     setConnection(newConnection);
 
-    getAllUserAndSignalRId();
+    fetchAllDuoConversationInfo();
+    fetchAllGroupConversationInfo();
 
     return () => {
       // Cleanup: Stop the connection when the component is unmounted
@@ -82,7 +104,7 @@ function Chat() {
       });
 
       connection.on("UserConnected", function () {
-        getAllUserAndSignalRId();
+        fetchAllDuoConversationInfo();
       });
 
       connection.on("UserDisconnected", function (connectionId) {
@@ -97,7 +119,7 @@ function Chat() {
       connection
         .start()
         .then(() => {
-          saveConnectionId(connection.connectionId);
+          saveSignalRsId(connection.connectionId);
         })
         .catch((err) => console.error(err.toString()));
     }
@@ -150,6 +172,7 @@ function Chat() {
 
   return (
     <div>
+      <h1>{localStorage.getItem("username")}</h1>
       <div>
         {userAndSignalRIdList.map((item) => (
           <div key={item.username}>
@@ -159,7 +182,7 @@ function Chat() {
                 setToggleConversation(true);
               }}
             >
-              {item.username} {item.signalRId}
+              {item.username}
             </button>
           </div>
         ))}

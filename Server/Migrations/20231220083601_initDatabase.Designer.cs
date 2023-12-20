@@ -12,7 +12,7 @@ using Server.Helpers;
 namespace Server.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20231215131947_initDatabase")]
+    [Migration("20231220083601_initDatabase")]
     partial class initDatabase
     {
         /// <inheritdoc />
@@ -62,6 +62,10 @@ namespace Server.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<string>("ConversationName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ConversationType")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")

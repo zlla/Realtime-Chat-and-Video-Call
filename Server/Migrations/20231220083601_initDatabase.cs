@@ -18,6 +18,7 @@ namespace Server.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ConversationName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ConversationType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>

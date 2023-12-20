@@ -8,6 +8,8 @@ namespace Server.Models
         public long Id { get; set; }
         public string? ConversationName { get; set; }
         [Required]
+        public required string ConversationType { get; set; }
+        [Required]
         public required DateTime CreatedAt { get; set; }
 
         public virtual ICollection<Participant>? Participants { get; set; }
