@@ -4,20 +4,24 @@ import { useNavigate } from "react-router";
 import * as signalR from "@microsoft/signalr";
 
 import { apiUrl } from "../settings/support";
-import Conversation from "../components/Conversation";
+// import Conversation from "../components/Conversation";
 
 function Chat() {
   const navigate = useNavigate();
-  const [connection, setConnection] = useState();
-  const [userAndSignalRIdList, setUserAndSignalRIdList] = useState([]);
-  const [groupList, setGroupList] = useState([]);
+  const [connection, setConnection] = useState(null);
+  const [duoConversationInfoList, setDuoConversationInfoList] = useState([]);
+  const [groupConversationInfoList, setGroupConversationInfoList] = useState(
+    []
+  );
+
   const [toggleConversation, setToggleConversation] = useState(false);
   const [signalRId, setSignalRId] = useState("");
   const [message, setMessage] = useState("");
   const [isGroup, setIsGroup] = useState(false);
-  const [allMessage, setAllMessage] = useState([]);
-  const [tempMessage, setTempMessage] = useState([]);
-  const [tempUsrName, setTempUsrName] = useState("");
+
+  const [returnConversations, setReturnConversations] = useState([]);
+  const [tempMessages, setTempMessages] = useState([]);
+  const [tempUsername, setTempUsername] = useState("");
 
   const saveSignalRsId = async (SId) => {
     const config = {
@@ -54,7 +58,7 @@ function Chat() {
         config
       );
       const dataArray = Object.values(response.data);
-      setUserAndSignalRIdList(dataArray);
+      setDuoConversationInfoList(dataArray);
     } catch (error) {
       console.log(error);
     }
@@ -73,7 +77,7 @@ function Chat() {
         config
       );
       const dataArray = Object.values(response.data);
-      setGroupList(dataArray);
+      setGroupConversationInfoList(dataArray);
     } catch (error) {
       console.log(error);
     }
@@ -98,12 +102,12 @@ function Chat() {
     } else {
       connection
         .invoke("SendMessageToUser", id, message)
-        .then(() => fetchAllMessages())
+        .then(() => fetchAllConversations())
         .catch((err) => console.error(err.toString()));
     }
   };
 
-  const fetchAllMessages = async () => {
+  const fetchAllConversations = async () => {
     const config = {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
@@ -113,42 +117,86 @@ function Chat() {
     try {
       const response = await axios.get(`${apiUrl}/message/getAll`, config);
       const dataArray = Object.values(response.data);
-      setAllMessage(dataArray);
+      setReturnConversations(dataArray);
     } catch (error) {
       console.log(error);
     }
   };
 
-  const handleConversationClick = (signalRId, username) => {
-    setTempMessage([]);
+  const handleDuoConversation = (signalRId, username) => {
+    setTempMessages([]);
+    setTempUsername("");
 
     setSignalRId(signalRId);
     setIsGroup(false);
     setToggleConversation(true);
-    setTempUsrName(username);
+    setTempUsername(username);
 
-    allMessage.forEach((message) => {
+    returnConversations.forEach((message) => {
       if (
         message["conversationType"] === "duo" &&
         message["receiverName"] === username &&
         message["messagesDTO"]
       ) {
-        setTempMessage(message);
+        setTempMessages(message);
       }
     });
   };
 
-  useEffect(() => {
-    allMessage.forEach((message) => {
+  const handleGrConversation = (signalRId) => {
+    setTempMessages([]);
+    setTempUsername("");
+
+    setSignalRId(signalRId);
+    setIsGroup(true);
+    setToggleConversation(true);
+
+    returnConversations.forEach((message) => {
       if (
-        message["conversationType"] === "duo" &&
-        message["receiverName"] === tempUsrName &&
+        message["conversationType"] === "group" &&
+        message["conversationId"] === signalRId &&
         message["messagesDTO"]
       ) {
-        setTempMessage(message);
+        setTempMessages(message);
       }
     });
-  }, [allMessage, tempUsrName]);
+  };
+
+  const handleConversationClick = (conversation) => {
+    if (conversation.conversationType.toLowerCase() === "duo") {
+      duoConversationInfoList.forEach((item) => {
+        if (item.username === conversation.receiverName) {
+          handleDuoConversation(item.signalRId, item.username);
+        }
+      });
+    } else if (conversation.conversationType.toLowerCase() === "group") {
+      groupConversationInfoList.forEach((item) => {
+        if (item.groupId.toString() === conversation.conversationId) {
+          handleGrConversation(item.groupId.toString());
+        }
+      });
+    } else {
+      return;
+    }
+  };
+
+  useEffect(() => {
+    returnConversations.forEach((message) => {
+      if (
+        message["conversationType"] === "duo" &&
+        message["receiverName"] === tempUsername &&
+        message["messagesDTO"]
+      ) {
+        setTempMessages(message);
+      } else if (
+        message["conversationType"] === "group" &&
+        message["conversationId"] === signalRId &&
+        message["messagesDTO"]
+      ) {
+        setTempMessages(message);
+      }
+    });
+  }, [returnConversations, tempUsername, signalRId]);
 
   useEffect(() => {
     const newConnection = new signalR.HubConnectionBuilder()
@@ -168,21 +216,16 @@ function Chat() {
   useEffect(() => {
     if (connection) {
       connection.on("ReceiveMessage", function (message) {
-        // var msg = message
-        //   .replace(/&/g, "&amp;")
-        //   .replace(/</g, "&lt;")
-        //   .replace(/>/g, "&gt;");
-        // var div = document.createElement("div");
-        // div.innerHTML = msg + "<hr/>";
-        // document.getElementById("messages").appendChild(div);
-        fetchAllMessages();
+        fetchAllConversations();
       });
 
       connection.on("UserConnected", function () {
+        fetchAllConversations();
         fetchAllDuoConversationInfo();
       });
 
       connection.on("NewGroup", function () {
+        fetchAllConversations();
         fetchAllGroupConversationInfo();
       });
 
@@ -201,7 +244,7 @@ function Chat() {
           saveSignalRsId(connection.connectionId);
           fetchAllDuoConversationInfo();
           fetchAllGroupConversationInfo();
-          fetchAllMessages();
+          fetchAllConversations();
         })
         .catch((err) => console.error(err.toString()));
     }
@@ -225,57 +268,40 @@ function Chat() {
       }
     };
 
-    if (groupList.length > 0) {
-      groupList.forEach((group) => {
+    if (groupConversationInfoList.length > 0) {
+      groupConversationInfoList.forEach((group) => {
         handleJoinGroup(group.groupId.toString());
       });
     }
-  }, [groupList, connection]);
+  }, [groupConversationInfoList, connection]);
 
   return (
     <div>
       <h1>{localStorage.getItem("username")}</h1>
+
+      <hr />
       <div>
-        {userAndSignalRIdList.map((item) => (
-          <div key={item.username}>
-            <button
-              onClick={() =>
-                handleConversationClick(item.signalRId, item.username)
-              }
-            >
-              {item.username}
-            </button>
-          </div>
-        ))}
-        <hr />
+        {returnConversations &&
+          returnConversations.map((conversation) => (
+            <div key={conversation.conversationId}>
+              <button onClick={() => handleConversationClick(conversation)}>
+                {conversation.conversationName}
+              </button>
+            </div>
+          ))}
       </div>
-      <div>
-        {groupList.map((item) => (
-          <div key={item.groupId}>
-            <button
-              onClick={() => {
-                setSignalRId(item.groupId.toString());
-                setIsGroup(true);
-                setToggleConversation(true);
-              }}
-            >
-              {item.groupName}
-            </button>
-          </div>
-        ))}
-      </div>
+      <hr />
 
       <div>
-        {tempMessage &&
-          tempMessage["messagesDTO"] &&
-          tempMessage["messagesDTO"].map((msg) => (
-            <div key={msg.id}>{msg.content}</div>
+        {tempMessages &&
+          tempMessages["messagesDTO"] &&
+          tempMessages["messagesDTO"].map((message) => (
+            <div key={message.id}>{message.content}</div>
           ))}
       </div>
 
       {toggleConversation && (
         <div>
-          <button onClick={() => setToggleConversation(false)}>Close</button>
           <br />
           <input
             type="text"
@@ -292,7 +318,7 @@ function Chat() {
           </button>
         </div>
       )}
-      {/* <div id="messages"></div> */}
+
       {/* <Conversation /> */}
 
       <button
@@ -300,7 +326,7 @@ function Chat() {
           navigate("/");
         }}
       >
-        home
+        Home
       </button>
     </div>
   );

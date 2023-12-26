@@ -53,6 +53,9 @@ namespace Server.Controllers
             var conversations = await _db.Participants
                 .Where(p => p.UserId == userFromDb.Id)
                 .Join(_db.Conversations, p => p.ConversationId, c => c.Id, (p, c) => c)
+                .OrderByDescending(c => _db.Messages
+                    .Where(m => m.ConversationId == c.Id)
+                    .Max(m => (DateTime?)m.SentAt))
                 .ToListAsync();
 
             var returnList = new List<GetAllMessagesReturn>();
@@ -100,14 +103,6 @@ namespace Server.Controllers
                     }
                 }
             }
-
-            // var options = new JsonSerializerOptions
-            // {
-            //     ReferenceHandler = ReferenceHandler.IgnoreCycles,
-            //     MaxDepth = 64,
-            // };
-
-            // string jsonString = JsonSerializer.Serialize(returnList, options);
 
             return Ok(returnList);
         }

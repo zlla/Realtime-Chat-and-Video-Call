@@ -143,8 +143,36 @@ namespace Server.Hubs
             return Groups.AddToGroupAsync(Context.ConnectionId, group);
         }
 
-        public Task SendMessageToGroup(string group, string message)
+        public async Task<Task> SendMessageToGroup(string group, string message)
         {
+            string senderId = Context.ConnectionId;
+            long senderUserId = 0;
+
+            var senderSignalRRecord = await _db.SignalRConnectionIds.Where(s => s.Value == senderId).FirstOrDefaultAsync();
+            if (senderSignalRRecord != null)
+            {
+                senderUserId = senderSignalRRecord.UserId;
+            }
+
+            if (senderUserId != 0)
+            {
+                Conversation? conversation = await _db.Conversations.Where(c => c.Id.ToString() == group).FirstOrDefaultAsync();
+                if (conversation != null)
+                {
+                    Message msgToDb = new()
+                    {
+                        ConversationId = conversation.Id,
+                        SenderId = senderUserId,
+                        Content = message,
+                        SentAt = DateTime.Now,
+                        MessageType = "text"
+                    };
+
+                    await _db.Messages.AddAsync(msgToDb);
+                    await _db.SaveChangesAsync();
+                }
+            }
+
             return Clients.Group(group).SendAsync("ReceiveMessage", message);
         }
 
