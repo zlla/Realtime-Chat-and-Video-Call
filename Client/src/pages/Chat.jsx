@@ -23,28 +23,6 @@ function Chat() {
   const [tempMessages, setTempMessages] = useState([]);
   const [tempUsername, setTempUsername] = useState("");
 
-  const saveSignalRsId = async (SId) => {
-    const config = {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-      },
-    };
-
-    const bodyParameters = {
-      SId: SId,
-    };
-
-    try {
-      await axios.post(
-        `${apiUrl}/chatHub/saveSignalRId`,
-        bodyParameters,
-        config
-      );
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const fetchAllDuoConversationInfo = async () => {
     const config = {
       headers: {
@@ -83,6 +61,22 @@ function Chat() {
     }
   };
 
+  const fetchAllConversations = async () => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    };
+
+    try {
+      const response = await axios.get(`${apiUrl}/message/getAll`, config);
+      const dataArray = Object.values(response.data);
+      setReturnConversations(dataArray);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const sendMessage = (message, id, isGroup) => {
     if (!connection) return;
 
@@ -104,22 +98,6 @@ function Chat() {
         .invoke("SendMessageToUser", id, message)
         .then(() => fetchAllConversations())
         .catch((err) => console.error(err.toString()));
-    }
-  };
-
-  const fetchAllConversations = async () => {
-    const config = {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-      },
-    };
-
-    try {
-      const response = await axios.get(`${apiUrl}/message/getAll`, config);
-      const dataArray = Object.values(response.data);
-      setReturnConversations(dataArray);
-    } catch (error) {
-      console.log(error);
     }
   };
 
@@ -214,34 +192,49 @@ function Chat() {
   }, []);
 
   useEffect(() => {
+    const saveSignalRId = async (SId) => {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        },
+      };
+
+      const bodyParameters = {
+        SId: SId,
+      };
+
+      try {
+        await axios.post(
+          `${apiUrl}/chatHub/saveSignalRId`,
+          bodyParameters,
+          config
+        );
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
     if (connection) {
       connection.on("ReceiveMessage", (message) => {
-        fetchAllConversations();
+        if (message) {
+          fetchAllConversations();
+        }
       });
+
+      // connection.on("NewGroup", () => {
+      //   fetchAllGroupConversationInfo();
+      // });
 
       connection.on("UserConnected", () => {
         fetchAllDuoConversationInfo();
-        fetchAllConversations();
       });
 
-      connection.on("NewGroup", () => {
-        fetchAllGroupConversationInfo();
-        fetchAllConversations();
-      });
-
-      // connection.on("UserDisconnected", function (connectionId) {
-      //   var groupElement = document.getElementById("group");
-      //   for (var i = 0; i < groupElement.length; i++) {
-      //     if (groupElement.options[i].value === connectionId) {
-      //       groupElement.remove(i);
-      //     }
-      //   }
-      // });
+      // connection.on("UserDisconnected", function (connectionId) {});
 
       connection
         .start()
         .then(() => {
-          saveSignalRsId(connection.connectionId);
+          saveSignalRId(connection.connectionId);
           fetchAllDuoConversationInfo();
           fetchAllGroupConversationInfo();
           fetchAllConversations();

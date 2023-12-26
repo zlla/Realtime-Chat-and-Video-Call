@@ -135,6 +135,18 @@ namespace Server.Hubs
                 }
             }
 
+            // SignalRConnectionId signalRConnectionId = await _db.SignalRConnectionIds.Where(s => s.UserId == receiverUserId).OrderByDescending(s => s.CreationTime)
+
+            SignalRConnectionId? signalRConnectionId = await _db.SignalRConnectionIds
+                .Where(s => s.UserId == receiverUserId)
+                .OrderByDescending(s => s.CreationTime)
+                .FirstOrDefaultAsync();
+
+            if (signalRConnectionId != null)
+            {
+                return Clients.Client(signalRConnectionId.Value.ToString()).SendAsync("ReceiveMessage", message);
+            }
+
             return Clients.Client(receiverId).SendAsync("ReceiveMessage", message);
         }
 
@@ -178,7 +190,7 @@ namespace Server.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            await Clients.All.SendAsync("UserConnected", Context.ConnectionId);
+            await Clients.All.SendAsync("UserConnected");
             await base.OnConnectedAsync();
         }
 
