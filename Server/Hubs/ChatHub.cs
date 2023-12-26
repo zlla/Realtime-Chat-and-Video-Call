@@ -135,7 +135,7 @@ namespace Server.Hubs
                 }
             }
 
-            return Clients.Client(receiverId).SendAsync("ReceiveMessage", message, senderId);
+            return Clients.Client(receiverId).SendAsync("ReceiveMessage", message);
         }
 
         public Task JoinGroup(string group)

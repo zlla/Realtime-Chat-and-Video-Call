@@ -215,18 +215,18 @@ function Chat() {
 
   useEffect(() => {
     if (connection) {
-      connection.on("ReceiveMessage", function (message) {
+      connection.on("ReceiveMessage", (message) => {
         fetchAllConversations();
       });
 
-      connection.on("UserConnected", function () {
-        fetchAllConversations();
+      connection.on("UserConnected", () => {
         fetchAllDuoConversationInfo();
+        fetchAllConversations();
       });
 
-      connection.on("NewGroup", function () {
-        fetchAllConversations();
+      connection.on("NewGroup", () => {
         fetchAllGroupConversationInfo();
+        fetchAllConversations();
       });
 
       // connection.on("UserDisconnected", function (connectionId) {
@@ -280,6 +280,25 @@ function Chat() {
       <h1>{localStorage.getItem("username")}</h1>
 
       <hr />
+      <h4>People maybe you know!</h4>
+      <div>
+        {duoConversationInfoList &&
+          duoConversationInfoList.map((item) => (
+            <div key={item.username}>
+              <button
+                onClick={() => {
+                  setToggleConversation(true);
+                  setSignalRId(item.signalRId);
+                  setIsGroup(false);
+                }}
+              >
+                {item.username}
+              </button>
+            </div>
+          ))}
+      </div>
+      <hr />
+
       <div>
         {returnConversations &&
           returnConversations.map((conversation) => (
