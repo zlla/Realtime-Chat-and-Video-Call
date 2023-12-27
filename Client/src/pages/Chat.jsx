@@ -21,7 +21,7 @@ function Chat() {
 
   const [returnConversations, setReturnConversations] = useState([]);
   const [tempMessages, setTempMessages] = useState([]);
-  const [tempUsername, setTempUsername] = useState("");
+  const [tempReceiverName, setTempReceiverName] = useState("");
 
   const fetchAllDuoConversationInfo = async () => {
     const config = {
@@ -101,19 +101,18 @@ function Chat() {
     }
   };
 
-  const handleDuoConversation = (signalRId, username) => {
+  const handleDuoConversation = (receiverName) => {
     setTempMessages([]);
-    setTempUsername("");
 
-    setSignalRId(signalRId);
     setIsGroup(false);
+    setSignalRId(receiverName);
+    setTempReceiverName(receiverName);
     setToggleConversation(true);
-    setTempUsername(username);
 
     returnConversations.forEach((message) => {
       if (
         message["conversationType"] === "duo" &&
-        message["receiverName"] === username &&
+        message["receiverName"] === receiverName &&
         message["messagesDTO"]
       ) {
         setTempMessages(message);
@@ -123,10 +122,10 @@ function Chat() {
 
   const handleGrConversation = (signalRId) => {
     setTempMessages([]);
-    setTempUsername("");
+    setTempReceiverName("");
 
-    setSignalRId(signalRId);
     setIsGroup(true);
+    setSignalRId(signalRId);
     setToggleConversation(true);
 
     returnConversations.forEach((message) => {
@@ -144,7 +143,7 @@ function Chat() {
     if (conversation.conversationType.toLowerCase() === "duo") {
       duoConversationInfoList.forEach((item) => {
         if (item.username === conversation.receiverName) {
-          handleDuoConversation(item.signalRId, item.username);
+          handleDuoConversation(item.username);
         }
       });
     } else if (conversation.conversationType.toLowerCase() === "group") {
@@ -162,7 +161,7 @@ function Chat() {
     returnConversations.forEach((message) => {
       if (
         message["conversationType"] === "duo" &&
-        message["receiverName"] === tempUsername &&
+        message["receiverName"] === tempReceiverName &&
         message["messagesDTO"]
       ) {
         setTempMessages(message);
@@ -174,7 +173,7 @@ function Chat() {
         setTempMessages(message);
       }
     });
-  }, [returnConversations, tempUsername, signalRId]);
+  }, [returnConversations, tempReceiverName, signalRId]);
 
   useEffect(() => {
     const newConnection = new signalR.HubConnectionBuilder()
@@ -281,7 +280,7 @@ function Chat() {
               <button
                 onClick={() => {
                   setToggleConversation(true);
-                  setSignalRId(item.signalRId);
+                  setSignalRId(item.username);
                   setIsGroup(false);
                 }}
               >

@@ -31,10 +31,10 @@ namespace Server.Hubs
             long senderUserId = 0;
             Conversation? duoConversation = null;
 
-            var receiverSignalRRecord = await _db.SignalRConnectionIds.Where(s => s.Value == receiverId).FirstOrDefaultAsync();
-            if (receiverSignalRRecord != null)
+            var receiverRecord = await _db.Users.Where(u => u.Username == receiverId).FirstOrDefaultAsync();
+            if (receiverRecord != null)
             {
-                receiverUserId = receiverSignalRRecord.UserId;
+                receiverUserId = receiverRecord.Id;
             }
             var senderSignalRRecord = await _db.SignalRConnectionIds.Where(s => s.Value == senderId).FirstOrDefaultAsync();
             if (senderSignalRRecord != null)
@@ -95,7 +95,7 @@ namespace Server.Hubs
                 }
                 else
                 {
-                    Conversation newConversation = new()
+                    Conversation newConversation = new Conversation
                     {
                         ConversationType = "duo",
                         CreatedAt = DateTime.Now
@@ -104,24 +104,24 @@ namespace Server.Hubs
                     await _db.Conversations.AddAsync(newConversation);
                     await _db.SaveChangesAsync();
 
-                    Participant participant1 = new()
+                    var participants = new List<Participant>
                     {
-                        UserId = receiverUserId,
-                        ConversationId = newConversation.Id,
-                        JoinedAt = DateTime.Now
-                    };
-                    Participant participant2 = new()
-                    {
-                        UserId = senderUserId,
-                        ConversationId = newConversation.Id,
-                        JoinedAt = DateTime.Now
+                        new() {
+                            UserId = receiverUserId,
+                            ConversationId = newConversation.Id,
+                            JoinedAt = DateTime.Now
+                        },
+                        new() {
+                            UserId = senderUserId,
+                            ConversationId = newConversation.Id,
+                            JoinedAt = DateTime.Now
+                        }
                     };
 
-                    await _db.Participants.AddAsync(participant1);
-                    await _db.Participants.AddAsync(participant2);
+                    await _db.Participants.AddRangeAsync(participants);
                     await _db.SaveChangesAsync();
 
-                    Message msgToDb = new()
+                    var msgToDb = new Message
                     {
                         ConversationId = newConversation.Id,
                         SenderId = senderUserId,
@@ -134,8 +134,6 @@ namespace Server.Hubs
                     await _db.SaveChangesAsync();
                 }
             }
-
-            // SignalRConnectionId signalRConnectionId = await _db.SignalRConnectionIds.Where(s => s.UserId == receiverUserId).OrderByDescending(s => s.CreationTime)
 
             SignalRConnectionId? signalRConnectionId = await _db.SignalRConnectionIds
                 .Where(s => s.UserId == receiverUserId)

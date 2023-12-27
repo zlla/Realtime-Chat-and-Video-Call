@@ -129,12 +129,9 @@ namespace Server.Controllers
             List<GetAllDuoConversationInfoReturn> list = await (
                 from user in _db.Users
                 where user.Id != userFromDb.Id
-                join signalRConnectionId in _db.SignalRConnectionIds on user.Id equals signalRConnectionId.UserId into signalRIds
-                from s in signalRIds.OrderByDescending(s => s.CreationTime).Take(1).DefaultIfEmpty()
                 select new GetAllDuoConversationInfoReturn
                 {
                     Username = user.Username,
-                    SignalRId = s.Value
                 }
             ).ToListAsync();
 
@@ -179,7 +176,6 @@ namespace Server.Controllers
     public class GetAllDuoConversationInfoReturn
     {
         public required string Username { get; set; }
-        public required string SignalRId { get; set; }
     }
 
     public class GetAllGroupConversationInfoReturn
