@@ -27,56 +27,41 @@ namespace Server.Hubs
         public async Task<Task> SendMessageToUser(string receiverId, string message)
         {
             string senderId = Context.ConnectionId;
-            long receiverUserId = 0;
-            long senderUserId = 0;
             Conversation? duoConversation = null;
 
-            var receiverRecord = await _db.Users.Where(u => u.Username == receiverId).FirstOrDefaultAsync();
-            if (receiverRecord != null)
-            {
-                receiverUserId = receiverRecord.Id;
-            }
-            var senderSignalRRecord = await _db.SignalRConnectionIds.Where(s => s.Value == senderId).FirstOrDefaultAsync();
-            if (senderSignalRRecord != null)
-            {
-                senderUserId = senderSignalRRecord.UserId;
-            }
+            User? receiverRecord = await _db.Users
+                .Where(u => u.Username == receiverId)
+                .FirstOrDefaultAsync();
+            SignalRConnectionId? senderSignalRRecord = await _db.SignalRConnectionIds
+                .Where(s => s.Value == senderId)
+                .FirstOrDefaultAsync();
+
+            long receiverUserId = receiverRecord?.Id ?? 0;
+            long senderUserId = senderSignalRRecord?.UserId ?? 0;
 
             if (receiverUserId != 0 && senderUserId != 0 && receiverUserId != senderUserId)
             {
-                List<Participant>? participantReceiverList = await _db.Participants.Where(p => p.UserId == receiverUserId).ToListAsync();
-                List<Participant>? participantSenderList = await _db.Participants.Where(p => p.UserId == senderUserId).ToListAsync();
-                List<long> sameIdList = new();
+                List<Participant> participantReceiverList = await _db.Participants
+                    .Where(p => p.UserId == receiverUserId)
+                    .ToListAsync();
 
-                foreach (var itemList1 in participantReceiverList)
-                {
-                    foreach (var itemList2 in participantSenderList)
-                    {
-                        if (itemList1.ConversationId == itemList2.ConversationId)
-                        {
-                            sameIdList.Add(itemList1.ConversationId);
-                        }
-                    }
-                }
+                List<Participant> participantSenderList = await _db.Participants
+                    .Where(p => p.UserId == senderUserId)
+                    .ToListAsync();
+
+                List<long> sameIdList = participantReceiverList
+                    .Select(pr => pr.ConversationId)
+                    .Intersect(participantSenderList.Select(ps => ps.ConversationId))
+                    .ToList();
 
                 if (sameIdList.Count > 0)
                 {
-                    List<Conversation> conversationsFromSameIdList = new();
-                    foreach (var conversationId in sameIdList)
-                    {
-                        conversationsFromSameIdList.Add(await _db.Conversations.Where(c => c.Id == conversationId).FirstAsync());
-                    }
+                    List<Conversation> conversationsFromSameIdList = await _db.Conversations
+                        .Where(c => sameIdList.Contains(c.Id))
+                        .ToListAsync();
 
-                    foreach (var conversation in conversationsFromSameIdList)
-                    {
-                        if (conversation.Participants != null)
-                        {
-                            if (conversation.Participants.Count == 2 && conversation.ConversationType == "duo")
-                            {
-                                duoConversation = conversation;
-                            }
-                        }
-                    }
+                    duoConversation = conversationsFromSameIdList
+                        .FirstOrDefault(c => c.Participants?.Count == 2 && c.ConversationType == "duo");
                 }
 
                 if (duoConversation != null)
@@ -95,7 +80,7 @@ namespace Server.Hubs
                 }
                 else
                 {
-                    Conversation newConversation = new Conversation
+                    Conversation newConversation = new()
                     {
                         ConversationType = "duo",
                         CreatedAt = DateTime.Now
@@ -142,10 +127,10 @@ namespace Server.Hubs
 
             if (signalRConnectionId != null)
             {
-                return Clients.Client(signalRConnectionId.Value.ToString()).SendAsync("ReceiveMessage", message);
+                await Clients.Client(signalRConnectionId.Value.ToString()).SendAsync("ReceiveMessage", message);
             }
 
-            return Clients.Client(receiverId).SendAsync("ReceiveMessage", message);
+            return Task.CompletedTask;
         }
 
         public Task JoinGroup(string group)
@@ -156,17 +141,19 @@ namespace Server.Hubs
         public async Task<Task> SendMessageToGroup(string group, string message)
         {
             string senderId = Context.ConnectionId;
-            long senderUserId = 0;
 
-            var senderSignalRRecord = await _db.SignalRConnectionIds.Where(s => s.Value == senderId).FirstOrDefaultAsync();
-            if (senderSignalRRecord != null)
-            {
-                senderUserId = senderSignalRRecord.UserId;
-            }
+            var senderSignalRRecord = await _db.SignalRConnectionIds
+                .Where(s => s.Value == senderId)
+                .FirstOrDefaultAsync();
+
+            long senderUserId = senderSignalRRecord?.UserId ?? 0;
 
             if (senderUserId != 0)
             {
-                Conversation? conversation = await _db.Conversations.Where(c => c.Id.ToString() == group).FirstOrDefaultAsync();
+                Conversation? conversation = await _db.Conversations
+                    .Where(c => c.Id.ToString() == group)
+                    .FirstOrDefaultAsync();
+
                 if (conversation != null)
                 {
                     Message msgToDb = new()
@@ -180,10 +167,12 @@ namespace Server.Hubs
 
                     await _db.Messages.AddAsync(msgToDb);
                     await _db.SaveChangesAsync();
+
+                    await Clients.Group(group).SendAsync("ReceiveMessage", message);
                 }
             }
 
-            return Clients.Group(group).SendAsync("ReceiveMessage", message);
+            return Task.CompletedTask;
         }
 
         public override async Task OnConnectedAsync()
