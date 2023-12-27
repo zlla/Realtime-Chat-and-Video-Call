@@ -64,19 +64,10 @@ namespace Server.Hubs
                         .FirstOrDefault(c => c.Participants?.Count == 2 && c.ConversationType == "duo");
                 }
 
+                long conversationId;
                 if (duoConversation != null)
                 {
-                    Message msgToDb = new()
-                    {
-                        ConversationId = duoConversation.Id,
-                        SenderId = senderUserId,
-                        Content = message,
-                        SentAt = DateTime.Now,
-                        MessageType = "text"
-                    };
-
-                    await _db.Messages.AddAsync(msgToDb);
-                    await _db.SaveChangesAsync();
+                    conversationId = duoConversation.Id;
                 }
                 else
                 {
@@ -106,28 +97,30 @@ namespace Server.Hubs
                     await _db.Participants.AddRangeAsync(participants);
                     await _db.SaveChangesAsync();
 
-                    var msgToDb = new Message
-                    {
-                        ConversationId = newConversation.Id,
-                        SenderId = senderUserId,
-                        Content = message,
-                        SentAt = DateTime.Now,
-                        MessageType = "text"
-                    };
-
-                    await _db.Messages.AddAsync(msgToDb);
-                    await _db.SaveChangesAsync();
+                    conversationId = newConversation.Id;
                 }
-            }
 
-            SignalRConnectionId? signalRConnectionId = await _db.SignalRConnectionIds
-                .Where(s => s.UserId == receiverUserId)
-                .OrderByDescending(s => s.CreationTime)
-                .FirstOrDefaultAsync();
+                var msgToDb = new Message
+                {
+                    ConversationId = conversationId,
+                    SenderId = senderUserId,
+                    Content = message,
+                    SentAt = DateTime.Now,
+                    MessageType = "text"
+                };
 
-            if (signalRConnectionId != null)
-            {
-                await Clients.Client(signalRConnectionId.Value.ToString()).SendAsync("ReceiveMessage", message);
+                await _db.Messages.AddAsync(msgToDb);
+                await _db.SaveChangesAsync();
+
+                SignalRConnectionId? signalRConnectionId = await _db.SignalRConnectionIds
+                    .Where(s => s.UserId == receiverUserId)
+                    .OrderByDescending(s => s.CreationTime)
+                    .FirstOrDefaultAsync();
+
+                if (signalRConnectionId != null)
+                {
+                    await Clients.Client(signalRConnectionId.Value.ToString()).SendAsync("ReceiveMessage", message);
+                }
             }
 
             return Task.CompletedTask;
