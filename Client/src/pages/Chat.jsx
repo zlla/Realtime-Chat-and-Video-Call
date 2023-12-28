@@ -21,6 +21,7 @@ function Chat() {
   const [returnConversations, setReturnConversations] = useState([]);
   const [tempMessages, setTempMessages] = useState([]);
   const [tempConversationId, setTempConversationId] = useState("");
+  const [tempRecentMessageId, setTempRecentMessageId] = useState("");
 
   const fetchAllDuoConversationInfo = async () => {
     const config = {
@@ -119,23 +120,19 @@ function Chat() {
     }
   };
 
-  const handleDuoConversation = async (receiverName, conversationId) => {
-    const messageList = await fetchAllMessage(conversationId);
+  const handleConversation = async (conversation, isGroup) => {
+    const messageList = await fetchAllMessage(conversation.conversationId);
 
-    setIsGroup(false);
-    setSignalRId(receiverName);
+    if (isGroup) {
+      setSignalRId(conversation.conversationId);
+    } else {
+      setSignalRId(conversation.receiverName);
+    }
+
+    setIsGroup(isGroup);
     setTempMessages(messageList);
-    setTempConversationId(conversationId);
-    setToggleConversation(true);
-  };
-
-  const handleGrConversation = async (conversationId) => {
-    const messageList = await fetchAllMessage(conversationId);
-
-    setIsGroup(true);
-    setSignalRId(conversationId);
-    setTempMessages(messageList);
-    setTempConversationId(conversationId);
+    setTempConversationId(conversation.conversationId);
+    setTempRecentMessageId(conversation.recentMessageId);
     setToggleConversation(true);
   };
 
@@ -143,13 +140,13 @@ function Chat() {
     if (conversation.conversationType.toLowerCase() === "duo") {
       duoConversationInfoList.forEach((item) => {
         if (item.username === conversation.receiverName) {
-          handleDuoConversation(item.username, conversation.conversationId);
+          handleConversation(conversation, false);
         }
       });
     } else if (conversation.conversationType.toLowerCase() === "group") {
       groupConversationInfoList.forEach((item) => {
         if (item.groupId.toString() === conversation.conversationId) {
-          handleGrConversation(item.groupId.toString());
+          handleConversation(conversation, true);
         }
       });
     } else {
@@ -250,14 +247,27 @@ function Chat() {
   }, [groupConversationInfoList, connection]);
 
   useEffect(() => {
-    const checkCurrentConversation = async () => {
+    const lazyLoadCurrentConversation = async () => {
       if (tempConversationId !== "") {
-        const messageList = await fetchAllMessage(tempConversationId);
-        setTempMessages(messageList);
+        returnConversations.forEach(async (conversation) => {
+          if (
+            conversation.conversationId === tempConversationId &&
+            conversation.recentMessageId !== tempRecentMessageId
+          ) {
+            const messageList = await fetchAllMessage(tempConversationId);
+            setTempMessages(messageList);
+          }
+        });
       }
     };
-    checkCurrentConversation();
-  }, [connection, tempConversationId, returnConversations]);
+
+    lazyLoadCurrentConversation();
+  }, [
+    connection,
+    tempConversationId,
+    returnConversations,
+    tempRecentMessageId,
+  ]);
 
   return (
     <div>
@@ -288,7 +298,7 @@ function Chat() {
           returnConversations.map((conversation) => (
             <div key={conversation.conversationId}>
               <button onClick={() => handleConversationClick(conversation)}>
-                <h6>{conversation.conversationName}</h6>
+                <h5>{conversation.conversationName}</h5>
                 <p>{conversation.recentMessage}</p>
               </button>
             </div>
