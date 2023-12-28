@@ -4,7 +4,6 @@ import { useNavigate } from "react-router";
 import * as signalR from "@microsoft/signalr";
 
 import { apiUrl } from "../settings/support";
-// import Conversation from "../components/Conversation";
 
 function Chat() {
   const navigate = useNavigate();
@@ -21,7 +20,7 @@ function Chat() {
 
   const [returnConversations, setReturnConversations] = useState([]);
   const [tempMessages, setTempMessages] = useState([]);
-  const [tempReceiverName, setTempReceiverName] = useState("");
+  const [tempConversationId, setTempConversationId] = useState("");
 
   const fetchAllDuoConversationInfo = async () => {
     const config = {
@@ -69,7 +68,7 @@ function Chat() {
     };
 
     try {
-      const response = await axios.get(`${apiUrl}/message/getAll`, config);
+      const response = await axios.get(`${apiUrl}/conversation/getAll`, config);
       const dataArray = Object.values(response.data);
       setReturnConversations(dataArray);
     } catch (error) {
@@ -101,49 +100,50 @@ function Chat() {
     }
   };
 
-  const handleDuoConversation = (receiverName) => {
-    setTempMessages([]);
+  const fetchAllMessage = async (id) => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    };
+
+    try {
+      const response = await axios.get(
+        `${apiUrl}/message/getAll/${id}`,
+        config
+      );
+      const dataArray = Object.values(response.data);
+      return dataArray;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleDuoConversation = async (receiverName, conversationId) => {
+    const messageList = await fetchAllMessage(conversationId);
 
     setIsGroup(false);
     setSignalRId(receiverName);
-    setTempReceiverName(receiverName);
+    setTempMessages(messageList);
+    setTempConversationId(conversationId);
     setToggleConversation(true);
-
-    returnConversations.forEach((message) => {
-      if (
-        message["conversationType"] === "duo" &&
-        message["receiverName"] === receiverName &&
-        message["messagesDTO"]
-      ) {
-        setTempMessages(message);
-      }
-    });
   };
 
-  const handleGrConversation = (signalRId) => {
-    setTempMessages([]);
-    setTempReceiverName("");
+  const handleGrConversation = async (conversationId) => {
+    const messageList = await fetchAllMessage(conversationId);
 
     setIsGroup(true);
-    setSignalRId(signalRId);
+    setSignalRId(conversationId);
+    setTempMessages(messageList);
+    setTempConversationId(conversationId);
     setToggleConversation(true);
-
-    returnConversations.forEach((message) => {
-      if (
-        message["conversationType"] === "group" &&
-        message["conversationId"] === signalRId &&
-        message["messagesDTO"]
-      ) {
-        setTempMessages(message);
-      }
-    });
   };
 
   const handleConversationClick = (conversation) => {
     if (conversation.conversationType.toLowerCase() === "duo") {
       duoConversationInfoList.forEach((item) => {
         if (item.username === conversation.receiverName) {
-          handleDuoConversation(item.username);
+          handleDuoConversation(item.username, conversation.conversationId);
         }
       });
     } else if (conversation.conversationType.toLowerCase() === "group") {
@@ -156,24 +156,6 @@ function Chat() {
       return;
     }
   };
-
-  useEffect(() => {
-    returnConversations.forEach((message) => {
-      if (
-        message["conversationType"] === "duo" &&
-        message["receiverName"] === tempReceiverName &&
-        message["messagesDTO"]
-      ) {
-        setTempMessages(message);
-      } else if (
-        message["conversationType"] === "group" &&
-        message["conversationId"] === signalRId &&
-        message["messagesDTO"]
-      ) {
-        setTempMessages(message);
-      }
-    });
-  }, [returnConversations, tempReceiverName, signalRId]);
 
   useEffect(() => {
     const newConnection = new signalR.HubConnectionBuilder()
@@ -267,6 +249,16 @@ function Chat() {
     }
   }, [groupConversationInfoList, connection]);
 
+  useEffect(() => {
+    const checkCurrentConversation = async () => {
+      if (tempConversationId !== "") {
+        const messageList = await fetchAllMessage(tempConversationId);
+        setTempMessages(messageList);
+      }
+    };
+    checkCurrentConversation();
+  }, [connection, tempConversationId, returnConversations]);
+
   return (
     <div>
       <h1>{localStorage.getItem("username")}</h1>
@@ -296,7 +288,8 @@ function Chat() {
           returnConversations.map((conversation) => (
             <div key={conversation.conversationId}>
               <button onClick={() => handleConversationClick(conversation)}>
-                {conversation.conversationName}
+                <h6>{conversation.conversationName}</h6>
+                <p>{conversation.recentMessage}</p>
               </button>
             </div>
           ))}
@@ -305,8 +298,7 @@ function Chat() {
 
       <div>
         {tempMessages &&
-          tempMessages["messagesDTO"] &&
-          tempMessages["messagesDTO"].map((message) => (
+          tempMessages.map((message) => (
             <div key={message.id}>{message.content}</div>
           ))}
       </div>
@@ -329,8 +321,6 @@ function Chat() {
           </button>
         </div>
       )}
-
-      {/* <Conversation /> */}
 
       <button
         onClick={() => {

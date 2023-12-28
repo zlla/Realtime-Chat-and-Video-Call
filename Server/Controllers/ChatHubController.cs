@@ -53,12 +53,6 @@ namespace Server.Controllers
             // Get the user from the database by name
             User? userFromDb = await _db.Users.FirstOrDefaultAsync(u => u.Username == userName);
 
-            if (userFromDb == null)
-            {
-                NotFound("User not found");
-                return null;
-            }
-
             return userFromDb;
         }
 
