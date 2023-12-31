@@ -101,7 +101,7 @@ function Chat() {
     }
   };
 
-  const fetchAllMessage = async (id) => {
+  const fetchAllMessage = async (conversationId) => {
     const config = {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
@@ -110,7 +110,7 @@ function Chat() {
 
     try {
       const response = await axios.get(
-        `${apiUrl}/message/getAll/${id}`,
+        `${apiUrl}/message/getAll/${conversationId}`,
         config
       );
       const dataArray = Object.values(response.data);

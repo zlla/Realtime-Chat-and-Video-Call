@@ -92,8 +92,6 @@ namespace Server.Controllers
                             .Join(_db.Users, p => p.UserId, u => u.Id, (p, u) => u.Username)
                             .FirstOrDefaultAsync();
 
-
-
                     Message? recentMessage = await _db.Messages
                         .Where(m => m.ConversationId == conversation.Id)
                         .OrderByDescending(m => m.SentAt)
