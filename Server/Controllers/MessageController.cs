@@ -20,7 +20,6 @@ namespace Server.Controllers
             _authLibrary = authLibrary;
         }
 
-        [AllowAnonymous]
         [HttpGet("getAll/{ConversationId}")]
         public async Task<IActionResult> GetAllMessages([FromRoute] long ConversationId)
         {

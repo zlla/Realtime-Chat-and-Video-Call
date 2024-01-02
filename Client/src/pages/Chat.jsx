@@ -23,6 +23,10 @@ function Chat() {
   const [tempConversationId, setTempConversationId] = useState("");
   const [tempRecentMessageId, setTempRecentMessageId] = useState("");
 
+  const [selectedUsernames, setSelectedUsernames] = useState([]);
+  const [isClickNewConversationBtn, setIsClickNewConversationBtn] =
+    useState(false);
+
   const fetchAllDuoConversationInfo = async () => {
     const config = {
       headers: {
@@ -56,6 +60,7 @@ function Chat() {
       );
       const dataArray = Object.values(response.data);
       setGroupConversationInfoList(dataArray);
+      console.log(dataArray);
     } catch (error) {
       console.log(error);
     }
@@ -154,6 +159,45 @@ function Chat() {
     }
   };
 
+  const handleNewConversationHandle = async () => {
+    // setIsClickNewConversationBtn(false);
+    // setSelectedUsernames([]);
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    };
+
+    const data = {
+      UsernameList: selectedUsernames,
+    };
+
+    try {
+      const response = await axios.post(
+        `${apiUrl}/chatHub/newGroup`,
+        data,
+        config
+      );
+      console.log(response);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleCheckboxChange = (event) => {
+    const { value } = event.target;
+    const isSelected = selectedUsernames.includes(value);
+
+    if (isSelected) {
+      setSelectedUsernames((prevSelected) =>
+        prevSelected.filter((username) => username !== value)
+      );
+    } else {
+      setSelectedUsernames((prevSelected) => [...prevSelected, value]);
+    }
+  };
+
   useEffect(() => {
     const newConnection = new signalR.HubConnectionBuilder()
       .withUrl(`${apiUrl}/chatHub`)
@@ -199,9 +243,9 @@ function Chat() {
         }
       });
 
-      // connection.on("NewGroup", () => {
-      //   fetchAllGroupConversationInfo();
-      // });
+      connection.on("NewGroup", () => {
+        fetchAllGroupConversationInfo();
+      });
 
       connection.on("UserConnected", () => {
         fetchAllDuoConversationInfo();
@@ -273,6 +317,30 @@ function Chat() {
     <div>
       <h1>{localStorage.getItem("username")}</h1>
 
+      <div>
+        <button onClick={() => setIsClickNewConversationBtn(true)}>
+          New Conversation
+        </button>
+        {isClickNewConversationBtn &&
+          duoConversationInfoList &&
+          duoConversationInfoList.map((item) => (
+            <div key={item.username}>
+              <label>
+                <input
+                  type="checkbox"
+                  value={item.username}
+                  checked={selectedUsernames.includes(item.username)}
+                  onChange={handleCheckboxChange}
+                />
+                {item.username}
+              </label>
+            </div>
+          ))}
+        {isClickNewConversationBtn && (
+          <button onClick={handleNewConversationHandle}>Submit</button>
+        )}
+      </div>
+
       <hr />
       <h4>People maybe you know!</h4>
       <div>
@@ -291,8 +359,17 @@ function Chat() {
             </div>
           ))}
       </div>
-      <hr />
 
+      <div>
+        {groupConversationInfoList &&
+          groupConversationInfoList.map((groupConversationInfo) => (
+            <div key={groupConversationInfo.groupId}>
+              <button>{groupConversationInfo.groupName}</button>
+              <br />
+            </div>
+          ))}
+      </div>
+      <hr />
       <div>
         {returnConversations &&
           returnConversations.map((conversation) => (
@@ -305,14 +382,12 @@ function Chat() {
           ))}
       </div>
       <hr />
-
       <div>
         {tempMessages &&
           tempMessages.map((message) => (
             <div key={message.id}>{message.content}</div>
           ))}
       </div>
-
       {toggleConversation && (
         <div>
           <br />
@@ -331,7 +406,6 @@ function Chat() {
           </button>
         </div>
       )}
-
       <button
         onClick={() => {
           navigate("/");

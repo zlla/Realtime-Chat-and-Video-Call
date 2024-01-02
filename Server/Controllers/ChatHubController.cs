@@ -1,9 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Server.Auth;
 using Server.Helpers;
+using Server.Hubs;
 using Server.Models;
 
 namespace Server.Controllers
@@ -15,11 +19,13 @@ namespace Server.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly AuthLibrary _authLibrary;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public ChatHubController(ApplicationDbContext db, AuthLibrary authLibrary)
+        public ChatHubController(ApplicationDbContext db, AuthLibrary authLibrary, IHubContext<ChatHub> hubContext)
         {
             _db = db;
             _authLibrary = authLibrary;
+            _hubContext = hubContext;
         }
 
         private async Task<User?> GetUserFromAccessToken()
@@ -155,6 +161,73 @@ namespace Server.Controllers
 
             return Ok(conversationsReturn);
         }
+
+        [HttpPost("newGroup")]
+        public async Task<IActionResult> NewGroup([FromBody] NewGroupRequest request)
+        {
+            if (request is null || !ModelState.IsValid)
+                return BadRequest("Invalid request. Please provide valid data.");
+
+            var userFromDb = await GetUserFromAccessToken();
+            if (userFromDb is null)
+                return BadRequest("User Not Found");
+
+            var usernameList = request.UsernameList;
+            var conversationName = string.IsNullOrWhiteSpace(request.ConversationName)
+                ? $"{userFromDb.Username}, {string.Join(", ", usernameList)}"
+                : request.ConversationName;
+
+            var userIdList = await _db.Users
+                .Where(u => usernameList.Contains(u.Username))
+                .Select(u => u.Id)
+                .ToListAsync();
+
+            userIdList.Add(userFromDb.Id);
+
+            if (string.IsNullOrWhiteSpace(conversationName))
+                return BadRequest("Unexpected Error");
+
+            var conversation = new Conversation
+            {
+                ConversationName = conversationName,
+                ConversationType = "group",
+                CreatedAt = DateTime.Now,
+            };
+
+            await _db.Conversations.AddAsync(conversation);
+            await _db.SaveChangesAsync();
+
+            var participants = userIdList.Select(userId => new Participant
+            {
+                UserId = userId,
+                ConversationId = conversation.Id,
+                JoinedAt = DateTime.Now,
+            }).ToList();
+
+            if (participants.Any())
+            {
+                await _db.Participants.AddRangeAsync(participants);
+                await _db.SaveChangesAsync();
+
+                var signalRConnectionIds = await _db.SignalRConnectionIds
+                    .Where(s => userIdList.Contains(s.UserId))
+                    .GroupBy(s => s.UserId)
+                    .Select(group => group
+                        .OrderByDescending(s => s.CreationTime)
+                        .FirstOrDefault())
+                    .ToListAsync();
+
+                foreach (var item in signalRConnectionIds)
+                {
+                    if (item != null)
+                    {
+                        await _hubContext.Clients.Client(item.Value.ToString()).SendAsync("NewGroup");
+                    }
+                }
+            }
+
+            return Ok();
+        }
     }
 
     public class SaveSignalRIdRequest
@@ -176,5 +249,11 @@ namespace Server.Controllers
     {
         public required long GroupId { get; set; }
         public string? GroupName { get; set; }
+    }
+
+    public class NewGroupRequest
+    {
+        public string? ConversationName { get; set; }
+        public required List<string> UsernameList { get; set; }
     }
 }
