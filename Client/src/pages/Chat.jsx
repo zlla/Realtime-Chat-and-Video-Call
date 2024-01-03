@@ -245,6 +245,7 @@ function Chat() {
 
       connection.on("NewGroup", () => {
         fetchAllGroupConversationInfo();
+        fetchAllConversations();
       });
 
       connection.on("UserConnected", () => {
@@ -337,7 +338,12 @@ function Chat() {
             </div>
           ))}
         {isClickNewConversationBtn && (
-          <button onClick={handleNewConversationHandle}>Submit</button>
+          <div>
+            <button onClick={handleNewConversationHandle}>Submit</button>
+            <button onClick={() => setIsClickNewConversationBtn(false)}>
+              Close
+            </button>
+          </div>
         )}
       </div>
 
@@ -359,18 +365,11 @@ function Chat() {
             </div>
           ))}
       </div>
+      <hr />
 
       <div>
-        {groupConversationInfoList &&
-          groupConversationInfoList.map((groupConversationInfo) => (
-            <div key={groupConversationInfo.groupId}>
-              <button>{groupConversationInfo.groupName}</button>
-              <br />
-            </div>
-          ))}
-      </div>
-      <hr />
-      <div>
+        <h4>Conversation</h4>
+
         {returnConversations &&
           returnConversations.map((conversation) => (
             <div key={conversation.conversationId}>
@@ -382,7 +381,10 @@ function Chat() {
           ))}
       </div>
       <hr />
+
       <div>
+        <h4>Message</h4>
+
         {tempMessages &&
           tempMessages.map((message) => (
             <div key={message.id}>{message.content}</div>

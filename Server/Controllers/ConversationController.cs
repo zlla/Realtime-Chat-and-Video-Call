@@ -67,9 +67,9 @@ namespace Server.Controllers
             var conversations = await _db.Participants
                 .Where(p => p.UserId == userFromDb.Id)
                 .Join(_db.Conversations, p => p.ConversationId, c => c.Id, (p, c) => c)
-                .OrderByDescending(c => _db.Messages
-                    .Where(m => m.ConversationId == c.Id)
-                    .Max(m => (DateTime?)m.SentAt))
+                .GroupJoin(_db.Messages, c => c.Id, m => m.ConversationId, (c, messages) => new { Conversation = c, LastMessageSentAt = messages.Max(m => (DateTime?)m.SentAt) })
+                .OrderByDescending(result => result.LastMessageSentAt ?? result.Conversation.CreatedAt)
+                .Select(result => result.Conversation)
                 .ToListAsync();
 
             var returnList = new List<ConversationDetail>();
