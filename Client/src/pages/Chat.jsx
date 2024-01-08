@@ -3,14 +3,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import * as signalR from "@microsoft/signalr";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { Button, Container, Row, Col, Nav } from "react-bootstrap";
-import { FaUserFriends, FaComments, FaPlus, FaCog } from "react-icons/fa"; // Import icons as needed
+import { Button, Container, Row, Col } from "react-bootstrap";
+import { FaUserFriends, FaComments, FaPlus, FaCog } from "react-icons/fa";
 
 import { apiUrl } from "../settings/support";
 import NewConversation from "../components/chat/NewConversation";
 import Conversations from "../components/chat/Conversations";
 import SelectedConversation from "../components/chat/SelectedConversation";
 import People from "../components/chat/People";
+import "../styles/page/Chat.css";
 
 function Chat() {
   const navigate = useNavigate();
@@ -227,31 +228,48 @@ function Chat() {
 
   return (
     <Container fluid>
+      <Button
+        style={{ marginTop: "20px" }}
+        variant="primary"
+        onClick={() => {
+          navigate("/");
+        }}
+      >
+        Home
+      </Button>
+
       <Row>
         {/* Left Navbar (Part 1) */}
-        <Col md={1} className="navbar-col text-center">
-          <Nav
-            variant="pills"
-            className="flex-column"
-            defaultActiveKey="conversation"
-            onSelect={handleTabChange}
-          >
-            <Nav.Item>
-              <Nav.Link eventKey="newConversation">
-                <FaPlus size={24} />
-              </Nav.Link>
-            </Nav.Item>
-            <Nav.Item>
-              <Nav.Item>
-                <Nav.Link eventKey="conversation">
-                  <FaComments size={24} />
-                </Nav.Link>
-              </Nav.Item>
-              <Nav.Link eventKey="people">
-                <FaUserFriends size={24} />
-              </Nav.Link>
-            </Nav.Item>
-          </Nav>
+        <Col md={2} className="navbar-col text-center">
+          <div className="flex-column px-3 rounded custom-nav-container">
+            <div
+              className={`d-flex align-items-center custom-link ${
+                activeTab === "newConversation" && "active"
+              }`}
+              onClick={() => handleTabChange("newConversation")}
+            >
+              <FaPlus size={30} className="mx-3" />
+              <div>New Chat</div>
+            </div>
+            <div
+              className={`d-flex align-items-center custom-link ${
+                activeTab === "conversation" && "active"
+              }`}
+              onClick={() => handleTabChange("conversation")}
+            >
+              <FaComments size={30} className="mx-3" />
+              <div>Chats</div>
+            </div>
+            <div
+              className={`d-flex align-items-center custom-link ${
+                activeTab === "people" && "active"
+              }`}
+              onClick={() => handleTabChange("people")}
+            >
+              <FaUserFriends size={30} className="mx-3" />
+              <div>People</div>
+            </div>
+          </div>
         </Col>
 
         {/* Content (Part 2) */}
@@ -296,7 +314,7 @@ function Chat() {
         </Col>
 
         {/* Selected Conversation (Part 3) */}
-        <Col md={6} className="selected-col">
+        <Col md={5} className="selected-col">
           <div>
             <SelectedConversation
               connection={connection}
@@ -312,23 +330,13 @@ function Chat() {
 
         {/* Settings Column (Part 4) */}
         <Col md={3} className="settings-col">
-          <div>
-            <h4>Settings</h4>
+          <div className="d-flex">
             {/* Add your settings content here */}
-            <FaCog size={24} />
+            <FaCog size={24} className="mx-3" />
+            <h4>Settings</h4>
           </div>
         </Col>
       </Row>
-
-      <Button
-        style={{ marginTop: "20px" }}
-        variant="primary"
-        onClick={() => {
-          navigate("/");
-        }}
-      >
-        Home
-      </Button>
     </Container>
   );
 }

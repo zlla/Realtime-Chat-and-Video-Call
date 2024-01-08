@@ -95,7 +95,7 @@ const Conversations = (props) => {
                 padding: "15px",
                 textAlign: "left",
                 overflow: "hidden",
-                borderRadius: "8px",
+                borderRadius: "15px",
                 cursor: "pointer",
                 transition: "background-color 0.3s ease",
               }}
@@ -122,13 +122,14 @@ const Conversations = (props) => {
                   className={`mb-0`}
                   style={{
                     whiteSpace: "nowrap",
-                    fontSize: "12px",
+                    fontSize: "14px",
                     color: "#555",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {conversation.recentMessage}
+                  {conversation.recentMessage ??
+                    "Start the conversation right now"}
                 </Card.Text>
               </div>
             </div>

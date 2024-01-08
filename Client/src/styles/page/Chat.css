@@ -1,0 +1,22 @@
+.custom-nav-container {
+  overflow: hidden;
+}
+
+.custom-link {
+  font-size: x-large;
+  border-radius: 25px;
+  color: #495057;
+  cursor: pointer;
+  padding: 10px;
+  margin-bottom: 5px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.custom-link:hover {
+  background-color: #e9ecef;
+  color: #007bff;
+}
+
+.custom-link.active {
+  color: #007bff;
+}
