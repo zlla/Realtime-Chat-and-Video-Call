@@ -331,7 +331,6 @@ function Chat() {
         {/* Settings Column (Part 4) */}
         <Col md={3} className="settings-col">
           <div className="d-flex">
-            {/* Add your settings content here */}
             <FaCog size={24} className="mx-3" />
             <h4>Settings</h4>
           </div>

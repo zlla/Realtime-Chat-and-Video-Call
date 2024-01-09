@@ -1,8 +1,10 @@
+using System.Data.SqlTypes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Auth;
 using Server.Helpers;
+using Server.Models;
 
 namespace Server.Controllers
 {
@@ -29,13 +31,19 @@ namespace Server.Controllers
             {
                 var messagesDTO = await _db.Messages
                     .Where(m => m.ConversationId == conversation.Id)
-                    .Select(m => new MessageDTO
+                    .Join(_db.Users, m => m.SenderId, u => u.Id, (m, u) => new
                     {
-                        Id = m.Id,
-                        SenderId = m.SenderId,
-                        Content = m.Content,
-                        SendAt = m.SentAt,
-                        MessageType = m.MessageType
+                        Message = m,
+                        User = u
+                    })
+                    .Select(result => new MessageDTO
+                    {
+                        Id = result.Message.Id,
+                        SenderName = result.User.Username,
+                        SenderId = result.Message.SenderId,
+                        Content = result.Message.Content,
+                        SendAt = result.Message.SentAt,
+                        MessageType = result.Message.MessageType
                     })
                     .ToListAsync();
 
@@ -52,6 +60,7 @@ namespace Server.Controllers
     {
         public required long Id { get; set; }
         public required long SenderId { get; set; }
+        public required string SenderName { get; set; }
         public required string Content { get; set; }
         public required DateTime SendAt { get; set; }
         public required string MessageType { get; set; }
