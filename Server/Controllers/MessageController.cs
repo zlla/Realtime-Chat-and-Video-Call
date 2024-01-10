@@ -22,10 +22,10 @@ namespace Server.Controllers
             _authLibrary = authLibrary;
         }
 
-        [HttpGet("getAll/{ConversationId}")]
-        public async Task<IActionResult> GetAllMessages([FromRoute] long ConversationId)
+        [HttpGet("getAll/{conversationId}")]
+        public async Task<IActionResult> GetAllMessages([FromRoute] long conversationId)
         {
-            var conversation = await _db.Conversations.Where(c => c.Id == ConversationId).FirstOrDefaultAsync();
+            var conversation = await _db.Conversations.Where(c => c.Id == conversationId).FirstOrDefaultAsync();
 
             if (conversation != null)
             {

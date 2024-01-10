@@ -36,7 +36,6 @@ const SelectedConversation = (props) => {
       .invoke(method, id, message)
       .then(() => {
         fetchAllConversations();
-        scrollToBottom();
       })
       .catch((err) => console.error(err.toString()));
   };

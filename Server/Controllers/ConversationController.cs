@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Server.Auth;
 using Server.Helpers;
+using Server.Hubs;
 using Server.Models;
 
 namespace Server.Controllers
@@ -15,11 +17,13 @@ namespace Server.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly AuthLibrary _authLibrary;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public ConversationController(ApplicationDbContext db, AuthLibrary authLibrary)
+        public ConversationController(ApplicationDbContext db, AuthLibrary authLibrary, IHubContext<ChatHub> hubContext)
         {
             _db = db;
             _authLibrary = authLibrary;
+            _hubContext = hubContext;
         }
 
         private async Task<User?> GetUserFromAccessToken()
@@ -56,7 +60,7 @@ namespace Server.Controllers
         }
 
         [HttpGet("getAll")]
-        public async Task<IActionResult> GetAllMessages()
+        public async Task<IActionResult> GetAllConversations()
         {
             User? userFromDb = await GetUserFromAccessToken();
             if (userFromDb == null)
@@ -78,12 +82,19 @@ namespace Server.Controllers
             {
                 if (conversation != null)
                 {
-                    string? conversationName = conversation.ConversationType == "group"
-                        ? conversation.ConversationName ?? conversation.Id.ToString()
-                        : await _db.Participants
+                    string? conversationName = conversation.ConversationName;
+
+                    if (string.IsNullOrEmpty(conversationName) && conversation.ConversationType == "duo")
+                    {
+                        conversationName = await _db.Participants
                             .Where(p => p.ConversationId == conversation.Id && p.UserId != userFromDb.Id)
                             .Join(_db.Users, p => p.UserId, u => u.Id, (p, u) => u.Username)
                             .FirstOrDefaultAsync();
+                    }
+                    else
+                    {
+                        conversationName = conversation.Id.ToString();
+                    }
 
                     string? receiverName = conversation.ConversationType == "group"
                         ? ""
@@ -115,6 +126,40 @@ namespace Server.Controllers
 
             return Ok(returnList);
         }
+
+        [HttpPatch("changeConversationName")]
+        public async Task<IActionResult> ChangeConversationName([FromBody] ChangeConversationNameRequest request)
+        {
+            Conversation? conversation = await _db.Conversations.Where(c => c.Id == request.Id).FirstOrDefaultAsync();
+            if (conversation == null)
+            {
+                return BadRequest("Conversation not found");
+            }
+
+            conversation.ConversationName = request.NewConversationName;
+            _db.Conversations.Update(conversation);
+            await _db.SaveChangesAsync();
+
+            var signalRConnectionIds = await _db.Conversations
+                .Where(c => c.Id == request.Id)
+                .Join(_db.Participants, c => c.Id, p => p.ConversationId, (c, p) => p)
+                .GroupJoin(_db.SignalRConnectionIds, p => p.UserId, s => s.UserId, (p, s) => new
+                {
+                    SignalRConnectionId = s.OrderByDescending(x => x.CreationTime).FirstOrDefault(),
+                })
+                .Select(r => r.SignalRConnectionId)
+                .ToListAsync();
+
+            foreach (var id in signalRConnectionIds)
+            {
+                if (id != null)
+                {
+                    await _hubContext.Clients.Client(id.Value.ToString()).SendAsync("ChangeConversationName");
+                }
+            }
+
+            return Ok();
+        }
     }
 
     public class ConversationDetail
@@ -125,5 +170,11 @@ namespace Server.Controllers
         public string? ReceiverName { get; set; }
         public string? RecentMessage { get; set; }
         public string? RecentMessageId { get; set; }
+    }
+
+    public class ChangeConversationNameRequest
+    {
+        public required long Id { get; set; }
+        public required string NewConversationName { get; set; }
     }
 }

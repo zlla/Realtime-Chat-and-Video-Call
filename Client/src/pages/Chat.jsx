@@ -6,12 +6,13 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { Button, Container, Row, Col } from "react-bootstrap";
 import { FaUserFriends, FaComments, FaPlus, FaCog } from "react-icons/fa";
 
+import "../styles/page/Chat.css";
 import { apiUrl } from "../settings/support";
 import NewConversation from "../components/chat/NewConversation";
 import Conversations from "../components/chat/Conversations";
 import SelectedConversation from "../components/chat/SelectedConversation";
 import People from "../components/chat/People";
-import "../styles/page/Chat.css";
+import ConversationSettings from "../components/chat/ConversationSettings";
 
 function Chat() {
   const navigate = useNavigate();
@@ -160,6 +161,10 @@ function Chat() {
         fetchAllConversations();
       });
 
+      connection.on("ChangeConversationName", () => {
+        fetchAllConversations();
+      });
+
       connection.on("UserConnected", () => {
         fetchAllDuoConversationInfo();
       });
@@ -213,6 +218,10 @@ function Chat() {
           ) {
             const messageList = await fetchAllMessage(tempConversationId);
             setTempMessages(messageList);
+          }
+
+          if (conversation.conversationId.toString() === tempConversationId) {
+            setTempConversationName(conversation.conversationName);
           }
         });
       }
@@ -329,12 +338,21 @@ function Chat() {
         </Col>
 
         {/* Settings Column (Part 4) */}
-        <Col md={3} className="settings-col">
-          <div className="d-flex">
-            <FaCog size={24} className="mx-3" />
-            <h4>Settings</h4>
-          </div>
-        </Col>
+        {toggleConversation && (
+          <Col md={3} className="settings-col">
+            <div className="d-flex">
+              <FaCog size={24} className="mx-3" />
+              <h4>Settings</h4>
+            </div>
+
+            <div>
+              <ConversationSettings
+                tempConversationId={tempConversationId}
+                tempConversationName={tempConversationName}
+              />
+            </div>
+          </Col>
+        )}
       </Row>
     </Container>
   );
