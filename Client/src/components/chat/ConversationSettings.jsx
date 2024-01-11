@@ -1,5 +1,5 @@
 import { string } from "prop-types";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 
 import { apiUrl } from "../../settings/support";
@@ -11,10 +11,6 @@ const ConversationSettings = (props) => {
     useState(false);
   const [newConversationName, setNewConversationName] =
     useState(tempConversationName);
-
-  useEffect(() => {
-    setNewConversationName(tempConversationName);
-  }, [tempConversationName]);
 
   const handleChangeConversationName = async () => {
     const config = {
@@ -44,7 +40,10 @@ const ConversationSettings = (props) => {
       <div>
         <button
           type="button"
-          onClick={() => setIsClickChangeConversationName(true)}
+          onClick={() => {
+            setNewConversationName(tempConversationName);
+            setIsClickChangeConversationName(true);
+          }}
         >
           Change conversation name
         </button>

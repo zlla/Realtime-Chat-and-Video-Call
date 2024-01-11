@@ -84,16 +84,14 @@ namespace Server.Controllers
                 {
                     string? conversationName = conversation.ConversationName;
 
-                    if (string.IsNullOrEmpty(conversationName) && conversation.ConversationType == "duo")
+                    if (string.IsNullOrEmpty(conversationName))
                     {
-                        conversationName = await _db.Participants
-                            .Where(p => p.ConversationId == conversation.Id && p.UserId != userFromDb.Id)
-                            .Join(_db.Users, p => p.UserId, u => u.Id, (p, u) => u.Username)
-                            .FirstOrDefaultAsync();
-                    }
-                    else
-                    {
-                        conversationName = conversation.Id.ToString();
+                        conversationName = conversation.ConversationType == "duo"
+                            ? await _db.Participants
+                                .Where(p => p.ConversationId == conversation.Id && p.UserId != userFromDb.Id)
+                                .Join(_db.Users, p => p.UserId, u => u.Id, (p, u) => u.Username)
+                                .FirstOrDefaultAsync()
+                            : conversation.Id.ToString();
                     }
 
                     string? receiverName = conversation.ConversationType == "group"

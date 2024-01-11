@@ -58,7 +58,7 @@ const Conversations = (props) => {
 
   const handleMouseEnter = (event) => {
     if (selectedConversation !== event.currentTarget) {
-      event.currentTarget.style.backgroundColor = "#f0f0f0";
+      event.currentTarget.style.backgroundColor = "#e9ecef";
     }
   };
 
@@ -72,7 +72,7 @@ const Conversations = (props) => {
     if (selectedConversation) {
       selectedConversation.style.backgroundColor = "transparent";
     }
-
+    console.log(conversation);
     setSelectedConversation(event.currentTarget);
     handleConversationClick(conversation);
   };

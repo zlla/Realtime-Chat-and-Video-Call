@@ -296,9 +296,15 @@ function Chat() {
               <h4>People</h4>
               <People
                 duoConversationInfoList={duoConversationInfoList}
-                setToggleConversation={setToggleConversation}
+                returnConversations={returnConversations}
+                setTempConversationId={setTempConversationId}
+                setTempRecentMessageId={setTempRecentMessageId}
+                setTempMessages={setTempMessages}
                 setSignalRId={setSignalRId}
                 setIsGroup={setIsGroup}
+                setTempConversationName={setTempConversationName}
+                setToggleConversation={setToggleConversation}
+                fetchAllMessage={fetchAllMessage}
               />
             </div>
           )}
