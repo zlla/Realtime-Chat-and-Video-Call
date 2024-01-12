@@ -45,15 +45,22 @@ const People = (props) => {
     if (selectedUser) {
       selectedUser.style.backgroundColor = "transparent";
     }
-
     setSelectedUser(event.currentTarget);
 
-    returnConversations.forEach((c) => {
-      if (c.receiverName === username) {
-        console.log("ok");
-        handleConversation(c);
-      }
-    });
+    const foundConversation = returnConversations.find(
+      (c) => c.receiverName === username
+    );
+
+    if (foundConversation) {
+      handleConversation(foundConversation);
+    } else {
+      setSignalRId(username);
+      setIsGroup(false);
+      setTempConversationName(username);
+      setTempMessages([]);
+      setTempConversationId(null);
+      setToggleConversation(true);
+    }
   };
 
   return (

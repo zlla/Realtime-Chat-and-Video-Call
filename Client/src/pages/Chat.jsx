@@ -235,6 +235,15 @@ function Chat() {
     tempRecentMessageId,
   ]);
 
+  useEffect(() => {
+    const foundConversation = returnConversations.find(
+      (c) => c.conversationType === "duo" && c.receiverName === signalRId
+    );
+    if (foundConversation) {
+      setTempConversationId(foundConversation.conversationId);
+    }
+  }, [returnConversations, signalRId]);
+
   return (
     <Container fluid>
       <Button

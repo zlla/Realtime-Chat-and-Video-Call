@@ -1,8 +1,8 @@
 import { any, array, func } from "prop-types";
 import { Card } from "react-bootstrap";
+import { useState } from "react";
 
 import "../../styles/ComponentStyles/Conversation.css";
-import { useState } from "react";
 
 const Conversations = (props) => {
   const {
@@ -38,14 +38,14 @@ const Conversations = (props) => {
 
   const handleConversationClick = (conversation) => {
     if (conversation.conversationType.toLowerCase() === "duo") {
-      duoConversationInfoList.forEach((item) => {
-        if (item.username === conversation.receiverName) {
+      duoConversationInfoList.forEach((d) => {
+        if (d.username === conversation.receiverName) {
           handleConversation(conversation, false);
         }
       });
     } else if (conversation.conversationType.toLowerCase() === "group") {
-      groupConversationInfoList.forEach((item) => {
-        if (item.groupId.toString() === conversation.conversationId) {
+      groupConversationInfoList.forEach((g) => {
+        if (g.groupId.toString() === conversation.conversationId) {
           handleConversation(conversation, true);
         }
       });
@@ -72,7 +72,6 @@ const Conversations = (props) => {
     if (selectedConversation) {
       selectedConversation.style.backgroundColor = "transparent";
     }
-    console.log(conversation);
     setSelectedConversation(event.currentTarget);
     handleConversationClick(conversation);
   };
