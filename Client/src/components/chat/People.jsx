@@ -1,6 +1,6 @@
 import { any, array, func } from "prop-types";
 import { useState } from "react";
-import { Card } from "react-bootstrap";
+import { Card, FormControl } from "react-bootstrap";
 
 const People = (props) => {
   const {
@@ -17,6 +17,15 @@ const People = (props) => {
   } = props;
 
   const [selectedUser, setSelectedUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const filteredConversationList = duoConversationInfoList.filter((item) =>
+    item.username.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleMouseEnter = (event) => {
     if (selectedUser !== event.currentTarget) {
@@ -42,10 +51,16 @@ const People = (props) => {
   };
 
   const handleClick = (event, username) => {
-    if (selectedUser) {
-      selectedUser.style.backgroundColor = "transparent";
+    const clickedUser = event.currentTarget;
+
+    if (selectedUser !== clickedUser) {
+      if (selectedUser) {
+        selectedUser.style.backgroundColor = "transparent";
+      }
+
+      clickedUser.style.backgroundColor = "#e9ecef";
+      setSelectedUser(clickedUser);
     }
-    setSelectedUser(event.currentTarget);
 
     const foundConversation = returnConversations.find(
       (c) => c.receiverName === username
@@ -65,45 +80,51 @@ const People = (props) => {
 
   return (
     <div>
-      {duoConversationInfoList &&
-        duoConversationInfoList.map((item) => (
-          <Card key={item.username} style={{ border: "none" }}>
+      <FormControl
+        type="text"
+        placeholder="Search..."
+        className="mb-3"
+        onChange={handleSearchChange}
+      />
+
+      {filteredConversationList.map((item) => (
+        <Card key={item.username} style={{ border: "none" }}>
+          <div
+            className={`d-flex align-items-start w-100`}
+            onClick={(event) => handleClick(event, item.username)}
+            onMouseEnter={(event) => handleMouseEnter(event)}
+            onMouseLeave={(event) => handleMouseLeave(event)}
+            style={{
+              padding: "15px",
+              textAlign: "left",
+              overflow: "hidden",
+              borderRadius: "15px",
+              cursor: "pointer",
+              transition: "background-color 0.3s ease",
+            }}
+          >
             <div
-              className={`d-flex align-items-start w-100`}
-              onClick={(event) => handleClick(event, item.username)}
-              onMouseEnter={(event) => handleMouseEnter(event)}
-              onMouseLeave={(event) => handleMouseLeave(event)}
+              className="conversation-content"
               style={{
-                padding: "15px",
-                textAlign: "left",
-                overflow: "hidden",
-                borderRadius: "15px",
-                cursor: "pointer",
-                transition: "background-color 0.3s ease",
+                maxWidth: "96%",
               }}
             >
-              <div
-                className="conversation-content"
+              <Card.Title
+                className={`my-0`}
                 style={{
-                  maxWidth: "96%",
+                  whiteSpace: "nowrap",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
-                <Card.Title
-                  className={`my-0`}
-                  style={{
-                    whiteSpace: "nowrap",
-                    fontSize: "16px",
-                    fontWeight: "bold",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {item.username}
-                </Card.Title>
-              </div>
+                {item.username}
+              </Card.Title>
             </div>
-          </Card>
-        ))}
+          </div>
+        </Card>
+      ))}
     </div>
   );
 };

@@ -69,10 +69,17 @@ const Conversations = (props) => {
   };
 
   const handleClick = (conversation, event) => {
-    if (selectedConversation) {
-      selectedConversation.style.backgroundColor = "transparent";
+    const clickedConversation = event.currentTarget;
+
+    if (selectedConversation !== clickedConversation) {
+      if (selectedConversation) {
+        selectedConversation.style.backgroundColor = "transparent";
+      }
+
+      clickedConversation.style.backgroundColor = "#e9ecef";
+      setSelectedConversation(clickedConversation);
     }
-    setSelectedConversation(event.currentTarget);
+
     handleConversationClick(conversation);
   };
 
