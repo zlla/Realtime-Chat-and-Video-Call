@@ -29,99 +29,105 @@ namespace Server.Hubs
             string senderId = Context.ConnectionId;
             Conversation? duoConversation = null;
 
-            User? receiverRecord = await _db.Users
-                .Where(u => u.Username == receiverId)
-                .FirstOrDefaultAsync();
+            User? senderRecord;
             SignalRConnectionId? senderSignalRRecord = await _db.SignalRConnectionIds
                 .Where(s => s.Value == senderId)
                 .FirstOrDefaultAsync();
 
-            long receiverUserId = receiverRecord?.Id ?? 0;
-            long senderUserId = senderSignalRRecord?.UserId ?? 0;
-
-            if (receiverUserId != 0 && senderUserId != 0 && receiverUserId != senderUserId)
+            if (senderSignalRRecord != null)
             {
-                List<Participant> participantReceiverList = await _db.Participants
-                    .Where(p => p.UserId == receiverUserId)
-                    .ToListAsync();
+                User? receiverRecord = await _db.Users.Where(u => u.Username == receiverId).FirstOrDefaultAsync();
+                senderRecord = await _db.Users.Where(u => u.Id == senderSignalRRecord.UserId).FirstOrDefaultAsync();
 
-                List<Participant> participantSenderList = await _db.Participants
-                    .Where(p => p.UserId == senderUserId)
-                    .ToListAsync();
-
-                List<long> sameIdList = participantReceiverList
-                    .Select(pr => pr.ConversationId)
-                    .Intersect(participantSenderList.Select(ps => ps.ConversationId))
-                    .ToList();
-
-                if (sameIdList.Count > 0)
+                if (receiverRecord != null && senderRecord != null && receiverRecord != senderRecord)
                 {
-                    List<Conversation> conversationsFromSameIdList = await _db.Conversations
-                        .Where(c => sameIdList.Contains(c.Id))
+                    long receiverUserId = receiverRecord.Id;
+                    long senderUserId = senderRecord.Id;
+                    List<Participant> participantReceiverList = await _db.Participants
+                        .Where(p => p.UserId == receiverUserId)
                         .ToListAsync();
 
-                    duoConversation = conversationsFromSameIdList
-                        .FirstOrDefault(c => c.Participants?.Count == 2 && c.ConversationType == "duo");
-                }
+                    List<Participant> participantSenderList = await _db.Participants
+                        .Where(p => p.UserId == senderUserId)
+                        .ToListAsync();
 
-                long conversationId;
-                if (duoConversation != null)
-                {
-                    conversationId = duoConversation.Id;
-                }
-                else
-                {
-                    Conversation newConversation = new()
+                    List<long> sameIdList = participantReceiverList
+                        .Select(pr => pr.ConversationId)
+                        .Intersect(participantSenderList.Select(ps => ps.ConversationId))
+                        .ToList();
+
+                    if (sameIdList.Count > 0)
                     {
-                        ConversationType = "duo",
-                        CreatedAt = DateTime.Now
-                    };
+                        List<Conversation> conversationsFromSameIdList = await _db.Conversations
+                            .Where(c => sameIdList.Contains(c.Id))
+                            .ToListAsync();
 
-                    await _db.Conversations.AddAsync(newConversation);
-                    await _db.SaveChangesAsync();
+                        duoConversation = conversationsFromSameIdList
+                            .FirstOrDefault(c => c.Participants?.Count == 2 && c.ConversationType == "duo");
+                    }
 
-                    var participants = new List<Participant>
+                    long conversationId;
+                    if (duoConversation != null)
+                    {
+                        conversationId = duoConversation.Id;
+                    }
+                    else
+                    {
+                        Conversation newConversation = new()
+                        {
+                            ConversationType = "duo",
+                            CreatedAt = DateTime.Now
+                        };
+
+                        await _db.Conversations.AddAsync(newConversation);
+                        await _db.SaveChangesAsync();
+
+                        var participants = new List<Participant>
                     {
                         new() {
                             UserId = receiverUserId,
+                            ParticipantName = receiverRecord.Username,
                             ConversationId = newConversation.Id,
                             JoinedAt = DateTime.Now
                         },
                         new() {
                             UserId = senderUserId,
+                            ParticipantName = senderRecord.Username,
                             ConversationId = newConversation.Id,
                             JoinedAt = DateTime.Now
                         }
                     };
 
-                    await _db.Participants.AddRangeAsync(participants);
+                        await _db.Participants.AddRangeAsync(participants);
+                        await _db.SaveChangesAsync();
+
+                        conversationId = newConversation.Id;
+                    }
+
+                    var msgToDb = new Message
+                    {
+                        ConversationId = conversationId,
+                        SenderId = senderUserId,
+                        Content = message,
+                        SentAt = DateTime.Now,
+                        MessageType = "text"
+                    };
+
+                    await _db.Messages.AddAsync(msgToDb);
                     await _db.SaveChangesAsync();
 
-                    conversationId = newConversation.Id;
-                }
+                    SignalRConnectionId? signalRConnectionId = await _db.SignalRConnectionIds
+                        .Where(s => s.UserId == receiverUserId)
+                        .OrderByDescending(s => s.CreationTime)
+                        .FirstOrDefaultAsync();
 
-                var msgToDb = new Message
-                {
-                    ConversationId = conversationId,
-                    SenderId = senderUserId,
-                    Content = message,
-                    SentAt = DateTime.Now,
-                    MessageType = "text"
-                };
-
-                await _db.Messages.AddAsync(msgToDb);
-                await _db.SaveChangesAsync();
-
-                SignalRConnectionId? signalRConnectionId = await _db.SignalRConnectionIds
-                    .Where(s => s.UserId == receiverUserId)
-                    .OrderByDescending(s => s.CreationTime)
-                    .FirstOrDefaultAsync();
-
-                if (signalRConnectionId != null)
-                {
-                    await Clients.Client(signalRConnectionId.Value.ToString()).SendAsync("ReceiveMessage", message);
+                    if (signalRConnectionId != null)
+                    {
+                        await Clients.Client(signalRConnectionId.Value.ToString()).SendAsync("ReceiveMessage", message);
+                    }
                 }
             }
+
 
             return Task.CompletedTask;
         }

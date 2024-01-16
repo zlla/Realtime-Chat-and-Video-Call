@@ -12,6 +12,7 @@ const People = (props) => {
     setSignalRId,
     setIsGroup,
     setTempConversationName,
+    setMyNickname,
     setToggleConversation,
     fetchAllMessage,
   } = props;
@@ -44,6 +45,7 @@ const People = (props) => {
     setSignalRId(conversation.receiverName);
     setIsGroup(false);
     setTempConversationName(conversation.conversationName);
+    setMyNickname(conversation.myNickname);
     setTempMessages(messageList);
     setTempConversationId(conversation.conversationId);
     setTempRecentMessageId(conversation.recentMessageId);
@@ -72,6 +74,7 @@ const People = (props) => {
       setSignalRId(username);
       setIsGroup(false);
       setTempConversationName(username);
+      setMyNickname("");
       setTempMessages([]);
       setTempConversationId(null);
       setToggleConversation(true);
@@ -138,6 +141,7 @@ People.propTypes = {
   setSignalRId: any,
   setIsGroup: any,
   setTempConversationName: any,
+  setMyNickname: any,
   setToggleConversation: any,
   fetchAllMessage: func,
 };

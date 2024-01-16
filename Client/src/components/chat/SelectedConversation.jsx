@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
-import { FaPaperPlane } from "react-icons/fa";
+import { FaPhone, FaVideo, FaPaperPlane } from "react-icons/fa";
 
 import "../../styles/ComponentStyles/SelectedConversation.css";
 
@@ -46,51 +46,97 @@ const SelectedConversation = (props) => {
   }, []);
 
   useEffect(() => {
-    // Scroll to the bottom when new messages are added
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
+    }
   }, [tempMessages]);
 
   return (
     <div className="messenger-container">
-      <h4>{tempConversationName}</h4>
-      <div className="messages-container">
-        {tempMessages.map((message) => (
-          <div
-            key={message.id}
-            className={`message-container d-flex ${
-              message.senderName === username
-                ? "justify-content-end"
-                : "justify-content-start"
-            }`}
-          >
-            <div
-              className={`message ${
-                message.senderName === username ? "my-message" : "other-message"
-              }`}
-            >
-              {message.content}
-            </div>
+      <div className="d-flex align-items-center justify-content-between mb-3">
+        <h4>{tempConversationName}</h4>
+        {toggleConversation && (
+          <div className="button-container">
+            <button className="btn btn-light mr-2 rounded-circle-btn">
+              <FaPhone className="call-icon" />
+            </button>
+            <button className="btn btn-light rounded-circle-btn">
+              <FaVideo className="call-icon" />
+            </button>
           </div>
-        ))}
-        <div ref={messagesEndRef} /> {/* Ref for scrolling to the bottom */}
+        )}
       </div>
+
+      <div
+        className="messages-container"
+        style={{
+          display: "flex",
+          flexDirection: "column-reverse",
+          height: "100%",
+          overflowY: "auto",
+        }}
+      >
+        {tempMessages
+          .slice()
+          .reverse()
+          .map((message) => {
+            if (message.messageType === "text") {
+              return (
+                <div
+                  key={message.id}
+                  className={`message-container d-flex ${
+                    message.senderName === username
+                      ? "justify-content-end"
+                      : "justify-content-start"
+                  }`}
+                >
+                  <div
+                    className={`message ${
+                      message.senderName === username
+                        ? "my-message"
+                        : "other-message"
+                    }`}
+                    ref={messagesEndRef}
+                  >
+                    {message.content}
+                  </div>
+                </div>
+              );
+            } else if (message.messageType === "settings") {
+              return (
+                <div key={message.id} className="settings-container">
+                  <span className="settings-message">{message.content}</span>
+                </div>
+              );
+            }
+          })}
+      </div>
+
       {toggleConversation && (
         <div className="input-container" style={{ width: "80%" }}>
           <input
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            onKeyUp={(e) => {
+              if (e.key === "Enter" && !e.repeat) {
+                e.preventDefault();
+                sendMessage(message, signalRId, isGroup);
+                setMessage("");
+              }
+            }}
             className="form-control mb-2"
             placeholder="Type your message"
           />
           <button
+            className="btn btn-primary"
+            type="button"
             onClick={() => {
               sendMessage(message, signalRId, isGroup);
               setMessage("");
             }}
-            className="btn btn-primary"
           >
-            <FaPaperPlane className="send-icon" />
+            <FaPaperPlane className="send-icon" />{" "}
           </button>
         </div>
       )}

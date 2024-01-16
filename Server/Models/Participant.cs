@@ -9,6 +9,8 @@ namespace Server.Models
         [Required]
         public long UserId { get; set; }
         [Required]
+        public required string ParticipantName { get; set; }
+        [Required]
         public long ConversationId { get; set; }
         public string? Role { get; set; }
         [Required]

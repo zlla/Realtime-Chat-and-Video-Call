@@ -89,9 +89,12 @@ namespace Server.Controllers
                         conversationName = conversation.ConversationType == "duo"
                             ? await _db.Participants
                                 .Where(p => p.ConversationId == conversation.Id && p.UserId != userFromDb.Id)
-                                .Join(_db.Users, p => p.UserId, u => u.Id, (p, u) => u.Username)
+                                .Select(p => p.ParticipantName)
                                 .FirstOrDefaultAsync()
-                            : conversation.Id.ToString();
+                            : await _db.Participants
+                                .Where(p => p.ConversationId == conversation.Id && p.UserId != userFromDb.Id)
+                                .Join(_db.Users, p => p.UserId, u => u.Id, (p, u) => u.Username)
+                                .FirstOrDefaultAsync();
                     }
 
                     string? receiverName = conversation.ConversationType == "group"
@@ -108,15 +111,34 @@ namespace Server.Controllers
 
                     if (!string.IsNullOrEmpty(conversationName))
                     {
-                        var temp = new ConversationDetail
+                        ConversationDetail temp;
+                        if (conversation.ConversationType == "duo")
                         {
-                            ConversationId = conversation.Id.ToString(),
-                            ConversationName = conversationName,
-                            ConversationType = conversation.ConversationType,
-                            ReceiverName = receiverName,
-                            RecentMessage = recentMessage?.Content,
-                            RecentMessageId = recentMessage?.Id.ToString(),
-                        };
+                            temp = new ConversationDetail
+                            {
+                                ConversationId = conversation.Id.ToString(),
+                                ConversationName = conversationName,
+                                MyNickname = await _db.Participants.Where(p => p.ConversationId == conversation.Id && p.UserId == userFromDb.Id)
+                                                .Select(p => p.ParticipantName)
+                                                .FirstOrDefaultAsync(),
+                                ConversationType = conversation.ConversationType,
+                                ReceiverName = receiverName,
+                                RecentMessage = recentMessage?.Content,
+                                RecentMessageId = recentMessage?.Id.ToString(),
+                            };
+                        }
+                        else
+                        {
+                            temp = new ConversationDetail
+                            {
+                                ConversationId = conversation.Id.ToString(),
+                                ConversationName = conversationName,
+                                ConversationType = conversation.ConversationType,
+                                ReceiverName = receiverName,
+                                RecentMessage = recentMessage?.Content,
+                                RecentMessageId = recentMessage?.Id.ToString(),
+                            };
+                        }
                         returnList.Add(temp);
                     }
                 }
@@ -134,9 +156,88 @@ namespace Server.Controllers
                 return BadRequest("Conversation not found");
             }
 
-            conversation.ConversationName = request.NewConversationName;
-            _db.Conversations.Update(conversation);
-            await _db.SaveChangesAsync();
+            User? userFromDb = await GetUserFromAccessToken();
+            if (userFromDb == null)
+            {
+                return NotFound("User not found");
+            }
+
+            if (conversation.ConversationType == "group")
+            {
+                conversation.ConversationName = request.NewConversationName;
+                _db.Conversations.Update(conversation);
+
+                Message changeConversationNameMessage = new()
+                {
+                    ConversationId = conversation.Id,
+                    SenderId = userFromDb.Id,
+                    Content = conversation.ConversationType == "duo" ? $"has changed nickname to '{conversation.ConversationName}'" : $"has changed the chat name to '{conversation.ConversationName}'",
+                    SentAt = DateTime.Now,
+                    MessageType = "settings"
+                };
+                _db.Messages.Add(changeConversationNameMessage);
+
+                await _db.SaveChangesAsync();
+
+            }
+            else if (conversation.ConversationType == "duo")
+            {
+                bool? isChangeSelfNickname = request.IsChangeSelfNickname;
+                if (isChangeSelfNickname == null)
+                {
+                    return BadRequest();
+                }
+
+                Participant? participant;
+                if ((bool)isChangeSelfNickname)
+                {
+                    participant = await _db.Participants.Where(p => p.ConversationId == conversation.Id && p.UserId == userFromDb.Id).FirstOrDefaultAsync();
+
+                    if (participant == null)
+                    {
+                        return NotFound("Not found participant");
+                    }
+
+                    participant.ParticipantName = !string.IsNullOrEmpty(request.NewConversationName) ? request.NewConversationName : userFromDb.Username;
+                    _db.Participants.Update(participant);
+                }
+                else
+                {
+                    participant = await _db.Participants.Where(p => p.ConversationId == conversation.Id && p.UserId != userFromDb.Id).FirstOrDefaultAsync();
+
+                    if (participant == null)
+                    {
+                        return NotFound("Not found participant");
+                    }
+
+                    string? tempParticipantName = !string.IsNullOrEmpty(request.NewConversationName) ? request.NewConversationName : "";
+                    if (tempParticipantName == "")
+                    {
+                        User? user2 = await _db.Users.Where(u => u.Id == participant.UserId).FirstOrDefaultAsync();
+                        if (user2 == null) return NotFound("User 2 not found");
+                        tempParticipantName = user2.Username;
+                    }
+
+                    participant.ParticipantName = tempParticipantName;
+
+                    _db.Participants.Update(participant);
+                }
+
+                string changedNickname = participant.ParticipantName;
+
+                Message changeConversationNameMessage = new()
+                {
+                    ConversationId = conversation.Id,
+                    SenderId = userFromDb.Id,
+                    Content = conversation.ConversationType == "duo" ? $"has changed nickname to '{changedNickname}'" : $"has changed the chat name to '{conversation.ConversationName}'",
+                    SentAt = DateTime.Now,
+                    MessageType = "settings"
+                };
+                _db.Messages.Add(changeConversationNameMessage);
+
+                await _db.SaveChangesAsync();
+            }
+
 
             var signalRConnectionIds = await _db.Conversations
                 .Where(c => c.Id == request.Id)
@@ -164,6 +265,7 @@ namespace Server.Controllers
     {
         public required string ConversationId { get; set; }
         public required string ConversationName { get; set; }
+        public string? MyNickname { get; set; }
         public required string ConversationType { get; set; }
         public string? ReceiverName { get; set; }
         public string? RecentMessage { get; set; }
@@ -174,5 +276,6 @@ namespace Server.Controllers
     {
         public required long Id { get; set; }
         public required string NewConversationName { get; set; }
+        public bool? IsChangeSelfNickname { get; set; }
     }
 }

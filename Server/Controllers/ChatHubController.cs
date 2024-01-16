@@ -198,6 +198,7 @@ namespace Server.Controllers
             var participants = userIdList.Select(userId => new Participant
             {
                 UserId = userId,
+                ParticipantName = userId.ToString(),
                 ConversationId = conversation.Id,
                 JoinedAt = DateTime.Now,
             }).ToList();

@@ -77,3 +77,28 @@
   font-size: 1.2em;
   margin-right: 5px;
 }
+
+.rounded-circle-btn {
+  color: #006bbf;
+  border-radius: 50%;
+  transition: border 0.3s ease;
+}
+
+.rounded-circle-btn:hover {
+  color: #006bbf;
+}
+
+.settings-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.settings-message {
+  color: #333;
+  display: inline-block;
+  max-width: 70%;
+  word-wrap: break-word;
+  background: none;
+  border: none;
+  font-size: 14px;
+}

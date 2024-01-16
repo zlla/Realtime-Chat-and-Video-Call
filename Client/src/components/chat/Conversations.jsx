@@ -15,6 +15,7 @@ const Conversations = (props) => {
     setSignalRId,
     setIsGroup,
     setTempConversationName,
+    setMyNickname,
     setToggleConversation,
     fetchAllMessage,
   } = props;
@@ -30,6 +31,7 @@ const Conversations = (props) => {
 
     setIsGroup(isGroup);
     setTempConversationName(conversation.conversationName);
+    setMyNickname(conversation.myNickname);
     setTempMessages(messageList);
     setTempConversationId(conversation.conversationId);
     setTempRecentMessageId(conversation.recentMessageId);
@@ -155,6 +157,7 @@ Conversations.propTypes = {
   setSignalRId: any,
   setIsGroup: any,
   setTempConversationName: any,
+  setMyNickname: any,
   setToggleConversation: any,
   fetchAllMessage: func,
 };

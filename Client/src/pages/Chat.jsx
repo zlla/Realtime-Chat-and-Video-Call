@@ -31,6 +31,7 @@ function Chat() {
   const [tempConversationId, setTempConversationId] = useState("");
   const [tempRecentMessageId, setTempRecentMessageId] = useState("");
   const [tempConversationName, setTempConversationName] = useState("");
+  const [myNickname, setMyNickname] = useState("");
 
   const [activeTab, setActiveTab] = useState("conversation");
 
@@ -222,6 +223,9 @@ function Chat() {
 
           if (conversation.conversationId.toString() === tempConversationId) {
             setTempConversationName(conversation.conversationName);
+            if (conversation.conversationType == "duo") {
+              setMyNickname(conversation.myNickname);
+            }
           }
         });
       }
@@ -312,6 +316,7 @@ function Chat() {
                 setSignalRId={setSignalRId}
                 setIsGroup={setIsGroup}
                 setTempConversationName={setTempConversationName}
+                setMyNickname={setMyNickname}
                 setToggleConversation={setToggleConversation}
                 fetchAllMessage={fetchAllMessage}
               />
@@ -330,6 +335,7 @@ function Chat() {
                 setSignalRId={setSignalRId}
                 setIsGroup={setIsGroup}
                 setTempConversationName={setTempConversationName}
+                setMyNickname={setMyNickname}
                 setToggleConversation={setToggleConversation}
                 fetchAllMessage={fetchAllMessage}
               />
@@ -364,6 +370,8 @@ function Chat() {
               <ConversationSettings
                 tempConversationId={tempConversationId}
                 tempConversationName={tempConversationName}
+                myNickname={myNickname}
+                isGroup={isGroup}
               />
             </div>
           </Col>

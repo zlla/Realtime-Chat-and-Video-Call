@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Server.Migrations
 {
     /// <inheritdoc />
-    public partial class initDatabase : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -81,6 +81,7 @@ namespace Server.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     UserId = table.Column<long>(type: "bigint", nullable: false),
+                    ParticipantName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ConversationId = table.Column<long>(type: "bigint", nullable: false),
                     Role = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     JoinedAt = table.Column<DateTime>(type: "datetime2", nullable: false)

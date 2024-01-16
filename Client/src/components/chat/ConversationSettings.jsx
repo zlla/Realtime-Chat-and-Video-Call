@@ -1,16 +1,17 @@
-import { string } from "prop-types";
+import { bool, string } from "prop-types";
 import { useState } from "react";
 import axios from "axios";
 
 import { apiUrl } from "../../settings/support";
 
 const ConversationSettings = (props) => {
-  const { tempConversationId, tempConversationName } = props;
+  const { tempConversationId, tempConversationName, myNickname, isGroup } =
+    props;
 
   const [isClickChangeConversationName, setIsClickChangeConversationName] =
     useState(false);
-  const [newConversationName, setNewConversationName] =
-    useState(tempConversationName);
+  const [newConversationName, setNewConversationName] = useState("");
+  const [isChangeSelfNickname, setIsChangeSelfNickname] = useState(false);
 
   const handleChangeConversationName = async () => {
     const config = {
@@ -26,6 +27,7 @@ const ConversationSettings = (props) => {
         {
           Id,
           NewConversationName: newConversationName,
+          IsChangeSelfNickname: isChangeSelfNickname,
         },
         config
       );
@@ -48,20 +50,64 @@ const ConversationSettings = (props) => {
           Change conversation name
         </button>
         <br />
-        {isClickChangeConversationName && (
+        {isClickChangeConversationName && !isGroup && (
           <div>
-            <label htmlFor="changeConversationName"></label>
-            <input
-              type="text"
-              id="changeConversationName"
-              value={newConversationName}
-              onChange={(e) => setNewConversationName(e.target.value)}
-            />
-            <br />
-            <button onClick={() => handleChangeConversationName()}>Set</button>
-            <button onClick={() => setIsClickChangeConversationName(false)}>
-              Cancel
-            </button>
+            <select
+              value={isChangeSelfNickname}
+              onChange={(e) => {
+                setIsChangeSelfNickname(e.target.value === "true");
+                if (e.target.value === "true") {
+                  setNewConversationName(myNickname);
+                } else {
+                  setNewConversationName(tempConversationName);
+                }
+              }}
+            >
+              <option value={true}>Your Nickname</option>
+              <option value={false}>Your Friend Nickname</option>
+            </select>
+            <div>
+              <label htmlFor="changeConversationName">Nickname</label>
+              <input
+                type="text"
+                id="changeConversationName"
+                value={newConversationName}
+                onChange={(e) => setNewConversationName(e.target.value)}
+              />
+              <br />
+              <button
+                onClick={() => {
+                  handleChangeConversationName();
+                }}
+              >
+                Set
+              </button>
+              <button onClick={() => setIsClickChangeConversationName(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+        {isClickChangeConversationName && isGroup && (
+          <div>
+            <div>
+              <label htmlFor="changeConversationName">
+                Change Conversation Name
+              </label>
+              <input
+                type="text"
+                id="changeConversationName"
+                value={newConversationName}
+                onChange={(e) => setNewConversationName(e.target.value)}
+              />
+              <br />
+              <button onClick={() => handleChangeConversationName()}>
+                Set
+              </button>
+              <button onClick={() => setIsClickChangeConversationName(false)}>
+                Cancel
+              </button>
+            </div>
           </div>
         )}
         <button type="button">Change avatar</button>
@@ -78,6 +124,8 @@ const ConversationSettings = (props) => {
 ConversationSettings.propTypes = {
   tempConversationId: string,
   tempConversationName: string,
+  myNickname: string,
+  isGroup: bool,
 };
 
 export default ConversationSettings;
