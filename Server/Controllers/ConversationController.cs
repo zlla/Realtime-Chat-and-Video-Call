@@ -7,6 +7,7 @@ using Server.Auth;
 using Server.Helpers;
 using Server.Hubs;
 using Server.Models;
+using Server.Services.Interfaces;
 
 namespace Server.Controllers
 {
@@ -16,10 +17,10 @@ namespace Server.Controllers
     public class ConversationController : Controller
     {
         private readonly ApplicationDbContext _db;
-        private readonly AuthLibrary _authLibrary;
+        private readonly IAuthLibrary _authLibrary;
         private readonly IHubContext<ChatHub> _hubContext;
 
-        public ConversationController(ApplicationDbContext db, AuthLibrary authLibrary, IHubContext<ChatHub> hubContext)
+        public ConversationController(ApplicationDbContext db, IAuthLibrary authLibrary, IHubContext<ChatHub> hubContext)
         {
             _db = db;
             _authLibrary = authLibrary;
@@ -171,9 +172,9 @@ namespace Server.Controllers
                 {
                     ConversationId = conversation.Id,
                     SenderId = userFromDb.Id,
-                    Content = conversation.ConversationType == "duo" ? $"has changed nickname to '{conversation.ConversationName}'" : $"has changed the chat name to '{conversation.ConversationName}'",
+                    Content = $"{userFromDb.Username} has changed the conversation name to '{conversation.ConversationName}'",
                     SentAt = DateTime.Now,
-                    MessageType = "settings"
+                    MessageType = "settings-conversationName"
                 };
                 _db.Messages.Add(changeConversationNameMessage);
 
@@ -187,6 +188,8 @@ namespace Server.Controllers
                 {
                     return BadRequest();
                 }
+
+                string user2Nickname = "";
 
                 Participant? participant;
                 if ((bool)isChangeSelfNickname)
@@ -211,13 +214,13 @@ namespace Server.Controllers
                     }
 
                     string? tempParticipantName = !string.IsNullOrEmpty(request.NewConversationName) ? request.NewConversationName : "";
+                    User? user2 = await _db.Users.Where(u => u.Id == participant.UserId).FirstOrDefaultAsync();
+                    if (user2 == null) return NotFound("User 2 not found");
                     if (tempParticipantName == "")
                     {
-                        User? user2 = await _db.Users.Where(u => u.Id == participant.UserId).FirstOrDefaultAsync();
-                        if (user2 == null) return NotFound("User 2 not found");
                         tempParticipantName = user2.Username;
                     }
-
+                    user2Nickname = user2.Username;
                     participant.ParticipantName = tempParticipantName;
 
                     _db.Participants.Update(participant);
@@ -229,9 +232,9 @@ namespace Server.Controllers
                 {
                     ConversationId = conversation.Id,
                     SenderId = userFromDb.Id,
-                    Content = conversation.ConversationType == "duo" ? $"has changed nickname to '{changedNickname}'" : $"has changed the chat name to '{conversation.ConversationName}'",
+                    Content = !string.IsNullOrEmpty(request.NewConversationName) ? $"{userFromDb.Username} has changed {user2Nickname} nickname to '{changedNickname}'" : $"{userFromDb.Username} has removed nickname",
                     SentAt = DateTime.Now,
-                    MessageType = "settings"
+                    MessageType = "settings-conversationName"
                 };
                 _db.Messages.Add(changeConversationNameMessage);
 

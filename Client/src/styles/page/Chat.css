@@ -7,8 +7,7 @@
   border-radius: 25px;
   color: #495057;
   cursor: pointer;
-  padding: 10px;
-  margin-bottom: 5px;
+  margin-bottom: 25px;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -19,4 +18,75 @@
 
 .custom-link.active {
   color: #007bff;
+}
+
+.border-vertical {
+  border-right: 1px solid #ccc;
+}
+
+.border-left {
+  border-left: 1px solid #ccc;
+}
+
+/* test */
+/* Default styles */
+.custom-nav-container {
+  display: flex;
+  justify-content: space-around;
+}
+
+.custom-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.navbar-col {
+  order: 1; /* Default order */
+}
+
+.content-col {
+  order: 2; /* Default order */
+}
+
+.selected-col {
+  order: 3; /* Default order */
+}
+
+.settings-col {
+  order: 4; /* Default order */
+}
+
+/* Media query for small screens */
+@media (max-width: 767px) {
+  .custom-nav-container {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .flex-column {
+    flex-direction: row !important;
+  }
+
+  .custom-link {
+    flex-direction: row;
+    text-align: center;
+  }
+
+  .navbar-col {
+    order: 4; /* Move navigation bar to the bottom */
+  }
+
+  .content-col {
+    order: 1; /* Move content to the top */
+  }
+
+  .selected-col {
+    order: 2; /* Move selected conversation to the middle */
+  }
+
+  .settings-col {
+    order: 3; /* Default order */
+  }
 }

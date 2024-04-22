@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Server.Auth;
 using Server.Helpers;
 using Server.Hubs;
+using Server.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,7 +59,7 @@ builder.Services.AddCors(options =>
         );
     });
 
-builder.Services.AddSingleton<AuthLibrary>();
+builder.Services.AddSingleton<IAuthLibrary, AuthLibrary>();
 
 var app = builder.Build();
 

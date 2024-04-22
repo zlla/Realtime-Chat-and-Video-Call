@@ -102,7 +102,7 @@ const SelectedConversation = (props) => {
                   </div>
                 </div>
               );
-            } else if (message.messageType === "settings") {
+            } else if (message.messageType === "settings-conversationName") {
               return (
                 <div key={message.id} className="settings-container">
                   <span className="settings-message">{message.content}</span>

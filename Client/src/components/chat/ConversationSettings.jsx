@@ -1,5 +1,5 @@
 import { bool, string } from "prop-types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
 import { apiUrl } from "../../settings/support";
@@ -36,6 +36,10 @@ const ConversationSettings = (props) => {
       console.log(error);
     }
   };
+
+  useEffect(() => {
+    setNewConversationName(tempConversationName);
+  }, [tempConversationId, tempConversationName]);
 
   return (
     <div>

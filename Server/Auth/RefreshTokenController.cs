@@ -5,6 +5,7 @@ using Server.Models;
 using Server.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Server.Services.Interfaces;
 
 namespace Server.Controllers
 {
@@ -14,9 +15,9 @@ namespace Server.Controllers
     public class RefreshTokenController : Controller
     {
         private readonly ApplicationDbContext _db;
-        private readonly AuthLibrary _authLibrary;
+        private readonly IAuthLibrary _authLibrary;
 
-        public RefreshTokenController(ApplicationDbContext db, AuthLibrary authLibrary)
+        public RefreshTokenController(ApplicationDbContext db, IAuthLibrary authLibrary)
         {
             _db = db;
             _authLibrary = authLibrary;

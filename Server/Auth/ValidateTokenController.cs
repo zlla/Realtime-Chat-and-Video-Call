@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Server.Auth;
+using Server.Services.Interfaces;
 
 namespace Server.Controllers
 {
@@ -9,9 +10,9 @@ namespace Server.Controllers
     [Authorize]
     public class ValidateTokenController : Controller
     {
-        private readonly AuthLibrary _authLibrary;
+        private readonly IAuthLibrary _authLibrary;
 
-        public ValidateTokenController(AuthLibrary authLibrary)
+        public ValidateTokenController(IAuthLibrary authLibrary)
         {
             _authLibrary = authLibrary;
         }

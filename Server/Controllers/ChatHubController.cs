@@ -7,6 +7,7 @@ using Server.Auth;
 using Server.Helpers;
 using Server.Hubs;
 using Server.Models;
+using Server.Services.Interfaces;
 
 namespace Server.Controllers
 {
@@ -16,10 +17,10 @@ namespace Server.Controllers
     public class ChatHubController : Controller
     {
         private readonly ApplicationDbContext _db;
-        private readonly AuthLibrary _authLibrary;
+        private readonly IAuthLibrary _authLibrary;
         private readonly IHubContext<ChatHub> _hubContext;
 
-        public ChatHubController(ApplicationDbContext db, AuthLibrary authLibrary, IHubContext<ChatHub> hubContext)
+        public ChatHubController(ApplicationDbContext db, IAuthLibrary authLibrary, IHubContext<ChatHub> hubContext)
         {
             _db = db;
             _authLibrary = authLibrary;

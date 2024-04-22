@@ -3,10 +3,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Server.Models;
+using Server.Services.Interfaces;
 
 namespace Server.Auth
 {
-    public class AuthLibrary
+
+    public class AuthLibrary : IAuthLibrary
     {
         private readonly IConfiguration _configuration;
 

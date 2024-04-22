@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Server.Auth;
 using Server.Helpers;
 using Server.Models;
+using Server.Services.Interfaces;
 
 namespace Server.Controllers
 {
@@ -14,9 +15,9 @@ namespace Server.Controllers
     public class MessageController : Controller
     {
         private readonly ApplicationDbContext _db;
-        private readonly AuthLibrary _authLibrary;
+        private readonly IAuthLibrary _authLibrary;
 
-        public MessageController(ApplicationDbContext db, AuthLibrary authLibrary)
+        public MessageController(ApplicationDbContext db, IAuthLibrary authLibrary)
         {
             _db = db;
             _authLibrary = authLibrary;

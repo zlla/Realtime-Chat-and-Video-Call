@@ -26,6 +26,8 @@ namespace Server.Hubs
 
         public async Task<Task> SendMessageToUser(string receiverId, string message)
         {
+            if (string.IsNullOrEmpty(message) || string.IsNullOrWhiteSpace(message)) return Task.CompletedTask;
+
             string senderId = Context.ConnectionId;
             Conversation? duoConversation = null;
 
@@ -128,7 +130,6 @@ namespace Server.Hubs
                 }
             }
 
-
             return Task.CompletedTask;
         }
 
@@ -139,6 +140,8 @@ namespace Server.Hubs
 
         public async Task<Task> SendMessageToGroup(string group, string message)
         {
+            if (string.IsNullOrEmpty(message) || string.IsNullOrWhiteSpace(message)) return Task.CompletedTask;
+
             string senderId = Context.ConnectionId;
 
             var senderSignalRRecord = await _db.SignalRConnectionIds

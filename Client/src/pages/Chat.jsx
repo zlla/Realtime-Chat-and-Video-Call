@@ -260,9 +260,9 @@ function Chat() {
         Home
       </Button>
 
-      <Row>
+      <Row className="border-vertical">
         {/* Left Navbar (Part 1) */}
-        <Col md={2} className="navbar-col text-center">
+        <Col sm={12} md={1} className="navbar-col text-center">
           <div className="flex-column px-3 rounded custom-nav-container">
             <div
               className={`d-flex align-items-center custom-link ${
@@ -270,8 +270,8 @@ function Chat() {
               }`}
               onClick={() => handleTabChange("newConversation")}
             >
-              <FaPlus size={30} className="mx-3" />
-              <div>New Chat</div>
+              <FaPlus size={35} className="mx-auto" />
+              {/* <div>New Chat</div> */}
             </div>
             <div
               className={`d-flex align-items-center custom-link ${
@@ -279,8 +279,8 @@ function Chat() {
               }`}
               onClick={() => handleTabChange("conversation")}
             >
-              <FaComments size={30} className="mx-3" />
-              <div>Chats</div>
+              <FaComments size={35} className="mx-auto" />
+              {/* <div>Chats</div> */}
             </div>
             <div
               className={`d-flex align-items-center custom-link ${
@@ -288,14 +288,14 @@ function Chat() {
               }`}
               onClick={() => handleTabChange("people")}
             >
-              <FaUserFriends size={30} className="mx-3" />
-              <div>People</div>
+              <FaUserFriends size={35} className="mx-auto" />
+              {/* <div>People</div> */}
             </div>
           </div>
         </Col>
 
         {/* Content (Part 2) */}
-        <Col md={2} className="content-col">
+        <Col sm={12} md={3} className="content-col border-left">
           {activeTab === "newConversation" && (
             <div>
               <h4>New Conversation</h4>
@@ -344,7 +344,7 @@ function Chat() {
         </Col>
 
         {/* Selected Conversation (Part 3) */}
-        <Col md={5} className="selected-col">
+        <Col sm={12} md={6} className="selected-col border-left">
           <div>
             <SelectedConversation
               connection={connection}
@@ -360,7 +360,7 @@ function Chat() {
 
         {/* Settings Column (Part 4) */}
         {toggleConversation && (
-          <Col md={3} className="settings-col">
+          <Col sm={12} md={2} className="settings-col border-left">
             <div className="d-flex">
               <FaCog size={24} className="mx-3" />
               <h4>Settings</h4>

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using Server.Auth;
 using Server.Helpers;
 using Server.Hubs;
+using Server.Services.Interfaces;
 
 namespace Server.Controllers
 {
@@ -14,10 +15,10 @@ namespace Server.Controllers
     public class UserInformationController : Controller
     {
         private readonly ApplicationDbContext _db;
-        private readonly AuthLibrary _authLibrary;
+        private readonly IAuthLibrary _authLibrary;
         private readonly IHubContext<ChatHub> _hubContext;
 
-        public UserInformationController(ApplicationDbContext db, AuthLibrary authLibrary, IHubContext<ChatHub> hubContext)
+        public UserInformationController(ApplicationDbContext db, IAuthLibrary authLibrary, IHubContext<ChatHub> hubContext)
         {
             _db = db;
             _authLibrary = authLibrary;
