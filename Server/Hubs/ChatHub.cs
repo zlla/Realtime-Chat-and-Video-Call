@@ -24,7 +24,7 @@ namespace Server.Hubs
             return Clients.Caller.SendAsync("ReceiveMessage", message);
         }
 
-        public async Task<Task> SendMessageToUser(string receiverId, string message)
+        public async Task<Task> SendMessageToUser(string receiverId, string message, string messageType)
         {
             if (string.IsNullOrEmpty(message) || string.IsNullOrWhiteSpace(message)) return Task.CompletedTask;
 
@@ -112,7 +112,7 @@ namespace Server.Hubs
                         SenderId = senderUserId,
                         Content = message,
                         SentAt = DateTime.Now,
-                        MessageType = "text"
+                        MessageType = messageType
                     };
 
                     await _db.Messages.AddAsync(msgToDb);
@@ -138,7 +138,7 @@ namespace Server.Hubs
             return Groups.AddToGroupAsync(Context.ConnectionId, group);
         }
 
-        public async Task<Task> SendMessageToGroup(string group, string message)
+        public async Task<Task> SendMessageToGroup(string group, string message, string messageType)
         {
             if (string.IsNullOrEmpty(message) || string.IsNullOrWhiteSpace(message)) return Task.CompletedTask;
 
@@ -164,7 +164,7 @@ namespace Server.Hubs
                         SenderId = senderUserId,
                         Content = message,
                         SentAt = DateTime.Now,
-                        MessageType = "text"
+                        MessageType = messageType
                     };
 
                     await _db.Messages.AddAsync(msgToDb);
