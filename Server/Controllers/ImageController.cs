@@ -24,9 +24,32 @@ namespace Server.Controllers
         private static string GetUniqueFileName(string fileName)
         {
             fileName = Path.GetFileName(fileName);
-            return string.Concat(
-                     Guid.NewGuid().ToString().AsSpan(0, 20)
-                    , Path.GetExtension(fileName));
+            return string.Concat(Guid.NewGuid().ToString(), Path.GetExtension(fileName));
+        }
+
+        [HttpPost("image-uploads")]
+        public async Task<IActionResult> ImageUploads([FromForm] PostingImages request)
+        {
+            if (request.Images == null || request.Images.Count == 0)
+            {
+                return BadRequest("No file received.");
+            }
+
+            List<string>? uploadedImageFileNames = new();
+
+            foreach (var image in request.Images)
+            {
+                if (image.Length > 0)
+                {
+                    var fileName = GetUniqueFileName(image.FileName);
+                    var filePath = Path.Combine(_uploadFolderPath, fileName);
+                    using var stream = new FileStream(filePath, FileMode.Create);
+                    await image.CopyToAsync(stream);
+                    uploadedImageFileNames.Add(fileName);
+                }
+            }
+
+            return Ok(uploadedImageFileNames);
         }
 
         [HttpPost]
@@ -60,7 +83,7 @@ namespace Server.Controllers
                 }
 
                 var fileStream = System.IO.File.OpenRead(filePath);
-                return File(fileStream, "image/jpg");
+                return PhysicalFile(filePath, "image/jpg");
             }
             catch (Exception ex)
             {
@@ -72,5 +95,11 @@ namespace Server.Controllers
         {
             public required IFormFile MyImage { get; set; }
         }
+
+        public class PostingImages
+        {
+            public required List<IFormFile> Images { get; set; }
+        }
+
     }
 }
