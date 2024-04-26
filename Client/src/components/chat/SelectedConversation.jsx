@@ -112,32 +112,7 @@ const SelectedConversation = (props) => {
     });
   }, [tempMessages]);
 
-  const handleFileUpload = async (event) => {
-    const files = event.target.files;
-
-    const formData = new FormData();
-    for (let i = 0; i < files.length; i++) {
-      formData.append("Images", files[i]);
-    }
-
-    try {
-      const response = await axios.post(
-        `${apiUrl}/image/image-uploads`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
-      console.log("Upload successful:", response.data);
-      setUploadedImageFileNames(response.data);
-    } catch (error) {
-      console.error("Error uploading file:", error);
-    }
-  };
-
-  const uploadImage = async (files) => {
+  const uploadImages = async (files) => {
     try {
       const formData = new FormData();
       for (let i = 0; i < files.length; i++) {
@@ -162,6 +137,17 @@ const SelectedConversation = (props) => {
     }
   };
 
+  const handleFileUpload = async (e) => {
+    const files = e.target.files;
+
+    try {
+      const data = await uploadImages(files);
+      setUploadedImageFileNames(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const handlePaste = async (e) => {
     e.preventDefault();
     const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -169,10 +155,10 @@ const SelectedConversation = (props) => {
     for (const item of items) {
       if (item.kind === "file") {
         const blob = item.getAsFile();
+
         try {
-          const data = await uploadImage([blob]);
+          const data = await uploadImages([blob]);
           setUploadedImageFileNames(data);
-          //sendMessage(data, signalRId, isGroup, "image");
         } catch (error) {
           console.error("Error handling paste:", error);
         }
@@ -183,20 +169,11 @@ const SelectedConversation = (props) => {
   const handleDrop = async (e) => {
     e.preventDefault();
     const files = e.dataTransfer.files;
-    handleFiles(files);
-  };
-
-  const handleFiles = async (files) => {
     const imageFiles = [...files].filter((file) => file.type.match("image.*"));
 
     try {
-      //const results = await Promise.all(imageFiles.map(uploadImage));
-      const data = await uploadImage(imageFiles);
+      const data = await uploadImages(imageFiles);
       setUploadedImageFileNames(data);
-
-      //results.forEach((result) => {
-      //  sendMessage(result, signalRId, isGroup, "image");
-      //});
     } catch (error) {
       console.error("Error handling files:", error);
     }
@@ -371,7 +348,7 @@ const SelectedConversation = (props) => {
                     return (
                       <img
                         key={uploadedImageFileName}
-                        src={`${apiUrl}/image/${uploadedImageFileName}`}
+                        src={`${apiUrl}/image/Uploads/${uploadedImageFileName}`}
                         alt=""
                         style={{
                           width: 100,

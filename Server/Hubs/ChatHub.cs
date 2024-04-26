@@ -8,10 +8,29 @@ namespace Server.Hubs
     public class ChatHub : Hub
     {
         private readonly ApplicationDbContext _db;
+        private readonly IWebHostEnvironment _hostingEnvironment;
 
-        public ChatHub(ApplicationDbContext db)
+        public ChatHub(ApplicationDbContext db, IWebHostEnvironment hostingEnvironment)
         {
             _db = db;
+            _hostingEnvironment = hostingEnvironment;
+        }
+
+        private string HandleImageMessage(string conversationId, string message)
+        {
+            string uploadImageFolder = Path.Combine(_hostingEnvironment.WebRootPath, "Uploads");
+            string conversationImageFolder = Path.Combine(_hostingEnvironment.WebRootPath, $"Images/{conversationId}");
+
+            if (!Directory.Exists(conversationImageFolder))
+            {
+                Directory.CreateDirectory(conversationImageFolder);
+            }
+            string sourceImagePath = Path.Combine(uploadImageFolder, message);
+            string destinationImagePath = Path.Combine(conversationImageFolder, message);
+
+            File.Move(sourceImagePath, destinationImagePath, true);
+
+            return $"Images/{conversationId}/{message}";
         }
 
         public Task SendMessageToAll(string message)
@@ -106,6 +125,11 @@ namespace Server.Hubs
                         conversationId = newConversation.Id;
                     }
 
+                    if (messageType == "image")
+                    {
+                        message = HandleImageMessage(conversationId.ToString(), message);
+                    }
+
                     var msgToDb = new Message
                     {
                         ConversationId = conversationId,
@@ -158,6 +182,12 @@ namespace Server.Hubs
 
                 if (conversation != null)
                 {
+
+                    if (messageType == "image")
+                    {
+                        message = HandleImageMessage(conversation.Id.ToString(), message);
+                    }
+
                     Message msgToDb = new()
                     {
                         ConversationId = conversation.Id,

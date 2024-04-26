@@ -52,26 +52,8 @@ namespace Server.Controllers
             return Ok(uploadedImageFileNames);
         }
 
-        [HttpPost]
-        public IActionResult Create([FromForm] ImagePost model)
-        {
-            if (model.MyImage != null && model.MyImage.Length > 0)
-            {
-                var uniqueFileName = GetUniqueFileName(model.MyImage.FileName);
-                var filePath = Path.Combine(_uploadFolderPath, uniqueFileName);
-                using var stream = new FileStream(filePath, FileMode.Create);
-                model.MyImage.CopyTo(stream);
-                // Save uniqueFileName to your database
-                // For example: dbContext.Images.Add(new Image { FileName = uniqueFileName });
-                // dbContext.SaveChanges();
-                // Return something
-                return Ok(uniqueFileName);
-            }
-            return BadRequest();
-        }
-
-        [HttpGet("{fileName}")]
-        public IActionResult GetImage(string fileName)
+        [HttpGet("Uploads/{fileName}")]
+        public IActionResult GetImageUpload(string fileName)
         {
             try
             {
@@ -91,9 +73,25 @@ namespace Server.Controllers
             }
         }
 
-        public class ImagePost
+        [HttpGet("Images/{folder}/{fileName}")]
+        public IActionResult GetImageConversation(string folder, string fileName)
         {
-            public required IFormFile MyImage { get; set; }
+            try
+            {
+                var filePath = Path.Combine(_hostingEnvironment.WebRootPath, $"Images/{folder}/{fileName}");
+
+                if (!System.IO.File.Exists(filePath))
+                {
+                    return NotFound("Image not found");
+                }
+
+                var fileStream = System.IO.File.OpenRead(filePath);
+                return PhysicalFile(filePath, "image/jpg");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex}");
+            }
         }
 
         public class PostingImages
