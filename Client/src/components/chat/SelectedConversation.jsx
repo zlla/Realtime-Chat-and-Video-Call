@@ -7,6 +7,7 @@ import axios from "axios";
 
 import "../../styles/ComponentStyles/SelectedConversation.css";
 import { apiUrl } from "../../settings/support";
+import VideoCall from "./VideoCall";
 
 const SelectedConversation = (props) => {
   const {
@@ -78,6 +79,17 @@ const SelectedConversation = (props) => {
         );
         const blobUrl = URL.createObjectURL(response.data);
 
+        const img = new Image();
+        img.src = blobUrl;
+
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+
+        const imgWidth = img.naturalWidth;
+        const imgHeight = img.naturalHeight;
+
         setImageUrls((prevState) => {
           const isMessageIdExist = prevState.some(
             (item) => item.messageId.toString() === messageId.toString(),
@@ -89,6 +101,8 @@ const SelectedConversation = (props) => {
               {
                 messageId,
                 imageUrl: blobUrl,
+                imgWidth,
+                imgHeight,
               },
             ];
           }
@@ -112,6 +126,9 @@ const SelectedConversation = (props) => {
     });
   }, [tempMessages]);
 
+  const [progress, setProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+
   const uploadImages = async (files) => {
     try {
       const formData = new FormData();
@@ -119,12 +136,19 @@ const SelectedConversation = (props) => {
         formData.append("Images", files[i]);
       }
 
+      setIsUploading(true);
       const response = await axios.post(
         `${apiUrl}/image/image-uploads`,
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total,
+            );
+            setProgress(percentCompleted);
           },
         },
       );
@@ -134,6 +158,8 @@ const SelectedConversation = (props) => {
     } catch (error) {
       console.error("Error uploading file:", error);
       throw error;
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -188,9 +214,7 @@ const SelectedConversation = (props) => {
             <button className="btn btn-light mr-2 rounded-circle-btn">
               <FaPhone className="call-icon" />
             </button>
-            <button className="btn btn-light rounded-circle-btn">
-              <FaVideo className="call-icon" />
-            </button>
+            <VideoCall />
           </div>
         )}
       </div>
@@ -244,23 +268,29 @@ const SelectedConversation = (props) => {
                   <div>
                     {imageUrls.map((item) => {
                       if (item.messageId.toString() === message.id.toString()) {
+                        let divStyle;
+                        if (item.imgWidth > item.imgHeight) {
+                          divStyle = {
+                            width: 400,
+                            height: 250,
+                          };
+                        } else {
+                          divStyle = {
+                            width: 250,
+                            height: 350,
+                          };
+                        }
+
                         return (
-                          <div
-                            key={item.messageId}
-                            style={{
-                              width: 400,
-                              height: 250,
-                            }}
-                          >
+                          <div key={item.messageId} style={divStyle}>
                             <img
                               src={item.imageUrl}
                               width={"100%"}
                               height={"100%"}
                               style={{
-                                objectFit: "contain",
+                                objectFit: "cover",
                               }}
                               alt="image"
-                              className="m-1"
                             />
                           </div>
                         );
@@ -335,6 +365,8 @@ const SelectedConversation = (props) => {
 
           {/* Image uploads */}
           <div>
+            <div>{isUploading && <div>{progress}%</div>}</div>
+
             {uploadedImageFileNames && uploadedImageFileNames.length > 0 && (
               <div>
                 <button
