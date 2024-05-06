@@ -112,6 +112,22 @@ function Chat() {
     }
   };
 
+  // const configuration = {
+  //   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+  // };
+  // const peerConnection = new RTCPeerConnection(configuration);
+
+  // const sendMessage = (id, answer) => {
+  //   if (!connection) return;
+
+  //   const method = "AnswerDuoCall";
+
+  //   connection
+  //     .invoke(method, id, JSON.stringify(answer))
+  //     .then(() => {})
+  //     .catch((err) => console.error(err.toString()));
+  // };
+
   useEffect(() => {
     const newConnection = new signalR.HubConnectionBuilder()
       .withUrl(`${apiUrl}/chatHub`)
@@ -169,6 +185,24 @@ function Chat() {
       connection.on("UserConnected", () => {
         fetchAllDuoConversationInfo();
       });
+
+      // connection.on("DuoCallRequest", async (offer, requestId) => {
+      //   const offerObject = JSON.parse(offer);
+      //   peerConnection.setRemoteDescription(
+      //     new RTCSessionDescription(offerObject)
+      //   );
+      //   const answer = await peerConnection.createAnswer();
+      //   await peerConnection.setLocalDescription(answer);
+
+      //   sendMessage(requestId, answer);
+      // });
+
+      // connection.on("DuoCallAnswer", async (answer) => {
+      //   const answerObject = JSON.parse(answer);
+      //   const remoteDesc = new RTCSessionDescription(answerObject);
+      //   await peerConnection.setRemoteDescription(remoteDesc);
+      //   console.log(answer);
+      // });
 
       // connection.on("UserDisconnected", function (connectionId) {});
 
@@ -354,6 +388,7 @@ function Chat() {
               tempConversationName={tempConversationName}
               toggleConversation={toggleConversation}
               fetchAllConversations={fetchAllConversations}
+              // peerConnection={peerConnection}
             />
           </div>
         </Col>

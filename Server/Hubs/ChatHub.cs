@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Server.Helpers;
 using Server.Models;
+using Newtonsoft.Json;
 
 namespace Server.Hubs
 {
@@ -151,6 +152,69 @@ namespace Server.Hubs
                     {
                         await Clients.Client(signalRConnectionId.Value.ToString()).SendAsync("ReceiveMessage", message);
                     }
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public async Task<Task> MakeDuoCall(string receiverId, string offer)
+        {
+            string senderId = Context.ConnectionId;
+
+            User? senderRecord;
+            SignalRConnectionId? senderSignalRRecord = await _db.SignalRConnectionIds
+                .Where(s => s.Value == senderId)
+                .FirstOrDefaultAsync();
+
+            if (senderSignalRRecord != null)
+            {
+                senderRecord = await _db.Users.Where(u => u.Id == senderSignalRRecord.UserId).FirstOrDefaultAsync();
+
+                User? receiverRecord = await _db.Users.Where(u => u.Username == receiverId).FirstOrDefaultAsync();
+
+                if (receiverRecord != null && senderRecord != null)
+                {
+                    long receiverUserId = receiverRecord.Id;
+
+                    SignalRConnectionId? signalRConnectionId = await _db.SignalRConnectionIds
+                        .Where(s => s.UserId == receiverUserId)
+                        .OrderByDescending(s => s.CreationTime)
+                        .FirstOrDefaultAsync();
+
+                    if (signalRConnectionId != null)
+                    {
+                        await Clients.Client(signalRConnectionId.Value.ToString()).SendAsync("DuoCallRequest", offer, senderId);
+                    }
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public async Task<Task> AnswerDuoCall(string requestId, string answer)
+        {
+            await Clients.Client(requestId).SendAsync("DuoCallAnswer", answer);
+
+            return Task.CompletedTask;
+        }
+
+        public async Task<Task> SendIceCandidate(string receiverId, string iceCandidate)
+        {
+            User? receiverRecord = await _db.Users.Where(u => u.Username == receiverId).FirstOrDefaultAsync();
+
+            if (receiverRecord != null)
+            {
+                long receiverUserId = receiverRecord.Id;
+
+                SignalRConnectionId? signalRConnectionId = await _db.SignalRConnectionIds
+                    .Where(s => s.UserId == receiverUserId)
+                    .OrderByDescending(s => s.CreationTime)
+                    .FirstOrDefaultAsync();
+
+                if (signalRConnectionId != null)
+                {
+                    await Clients.Client(signalRConnectionId.Value.ToString()).SendAsync("NewIceCandidate", iceCandidate);
                 }
             }
 

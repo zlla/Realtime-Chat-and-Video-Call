@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
-import { FaPhone, FaVideo, FaPaperPlane } from "react-icons/fa";
+import { FaPhone, FaPaperPlane } from "react-icons/fa";
 import { TbPhotoUp } from "react-icons/tb";
 import { MdOutlineAddReaction } from "react-icons/md";
 import axios from "axios";
@@ -75,7 +75,7 @@ const SelectedConversation = (props) => {
           `${apiUrl}/image/${imageUrlResponse}`,
           {
             responseType: "blob",
-          },
+          }
         );
         const blobUrl = URL.createObjectURL(response.data);
 
@@ -92,7 +92,7 @@ const SelectedConversation = (props) => {
 
         setImageUrls((prevState) => {
           const isMessageIdExist = prevState.some(
-            (item) => item.messageId.toString() === messageId.toString(),
+            (item) => item.messageId.toString() === messageId.toString()
           );
 
           if (!isMessageIdExist) {
@@ -146,11 +146,11 @@ const SelectedConversation = (props) => {
           },
           onUploadProgress: (progressEvent) => {
             const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total,
+              (progressEvent.loaded * 100) / progressEvent.total
             );
             setProgress(percentCompleted);
           },
-        },
+        }
       );
 
       console.log("Upload successful:", response.data);
@@ -214,7 +214,7 @@ const SelectedConversation = (props) => {
             <button className="btn btn-light mr-2 rounded-circle-btn">
               <FaPhone className="call-icon" />
             </button>
-            <VideoCall />
+            <VideoCall connection={connection} signalRId={signalRId} />
           </div>
         )}
       </div>
