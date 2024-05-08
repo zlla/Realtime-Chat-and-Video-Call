@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { FaPhone, FaPaperPlane } from "react-icons/fa";
 import { TbPhotoUp } from "react-icons/tb";
@@ -8,6 +8,7 @@ import axios from "axios";
 import "../../styles/ComponentStyles/SelectedConversation.css";
 import { apiUrl } from "../../settings/support";
 import VideoCall from "./VideoCall";
+import { ChatContext } from "../../App";
 
 const SelectedConversation = (props) => {
   const {
@@ -16,9 +17,9 @@ const SelectedConversation = (props) => {
     toggleConversation,
     signalRId,
     isGroup,
-    connection,
     fetchAllConversations,
   } = props;
+  const { connection } = useContext(ChatContext);
 
   const [message, setMessage] = useState("");
   const [username, setUsername] = useState("");
@@ -214,7 +215,7 @@ const SelectedConversation = (props) => {
             <button className="btn btn-light mr-2 rounded-circle-btn">
               <FaPhone className="call-icon" />
             </button>
-            <VideoCall connection={connection} signalRId={signalRId} />
+            <VideoCall signalRId={signalRId} />
           </div>
         )}
       </div>
@@ -406,7 +407,6 @@ SelectedConversation.propTypes = {
   toggleConversation: PropTypes.bool,
   signalRId: PropTypes.string,
   isGroup: PropTypes.bool,
-  connection: PropTypes.any,
   fetchAllConversations: PropTypes.func,
 };
 

@@ -52,11 +52,11 @@ builder.Services.AddCors(options =>
     {
         options.AddPolicy("CorsPolicy",
             builder => builder
-            .WithOrigins("http://localhost:5173")
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials()
-        );
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .SetIsOriginAllowed(options => true)
+                    .AllowCredentials()
+            );
     });
 
 builder.Services.AddSingleton<IAuthLibrary, AuthLibrary>();

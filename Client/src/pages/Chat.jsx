@@ -1,7 +1,6 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import * as signalR from "@microsoft/signalr";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Button, Container, Row, Col } from "react-bootstrap";
 import { FaUserFriends, FaComments, FaPlus, FaCog } from "react-icons/fa";
@@ -13,10 +12,12 @@ import Conversations from "../components/chat/Conversations";
 import SelectedConversation from "../components/chat/SelectedConversation";
 import People from "../components/chat/People";
 import ConversationSettings from "../components/chat/ConversationSettings";
+import { ChatContext } from "../App";
 
 function Chat() {
+  const { connection } = useContext(ChatContext);
   const navigate = useNavigate();
-  const [connection, setConnection] = useState(null);
+
   const [duoConversationInfoList, setDuoConversationInfoList] = useState([]);
   const [groupConversationInfoList, setGroupConversationInfoList] = useState(
     []
@@ -112,60 +113,7 @@ function Chat() {
     }
   };
 
-  // const configuration = {
-  //   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-  // };
-  // const peerConnection = new RTCPeerConnection(configuration);
-
-  // const sendMessage = (id, answer) => {
-  //   if (!connection) return;
-
-  //   const method = "AnswerDuoCall";
-
-  //   connection
-  //     .invoke(method, id, JSON.stringify(answer))
-  //     .then(() => {})
-  //     .catch((err) => console.error(err.toString()));
-  // };
-
   useEffect(() => {
-    const newConnection = new signalR.HubConnectionBuilder()
-      .withUrl(`${apiUrl}/chatHub`)
-      .build();
-
-    setConnection(newConnection);
-
-    return () => {
-      // Cleanup: Stop the connection when the component is unmounted
-      if (newConnection) {
-        newConnection.stop().catch((err) => console.error(err.toString()));
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    const saveSignalRId = async (SId) => {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      };
-
-      const bodyParameters = {
-        SId: SId,
-      };
-
-      try {
-        await axios.post(
-          `${apiUrl}/chatHub/saveSignalRId`,
-          bodyParameters,
-          config
-        );
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
     if (connection) {
       connection.on("ReceiveMessage", (message) => {
         if (message) {
@@ -186,45 +134,10 @@ function Chat() {
         fetchAllDuoConversationInfo();
       });
 
-      // connection.on("DuoCallRequest", async (offer, requestId) => {
-      //   const offerObject = JSON.parse(offer);
-      //   peerConnection.setRemoteDescription(
-      //     new RTCSessionDescription(offerObject)
-      //   );
-      //   const answer = await peerConnection.createAnswer();
-      //   await peerConnection.setLocalDescription(answer);
-
-      //   sendMessage(requestId, answer);
-      // });
-
-      // connection.on("DuoCallAnswer", async (answer) => {
-      //   const answerObject = JSON.parse(answer);
-      //   const remoteDesc = new RTCSessionDescription(answerObject);
-      //   await peerConnection.setRemoteDescription(remoteDesc);
-      //   console.log(answer);
-      // });
-
-      // connection.on("UserDisconnected", function (connectionId) {});
-
-      connection
-        .start()
-        .then(() => {
-          saveSignalRId(connection.connectionId);
-          fetchAllDuoConversationInfo();
-          fetchAllGroupConversationInfo();
-          fetchAllConversations();
-        })
-        .catch((err) => console.error(err.toString()));
+      fetchAllDuoConversationInfo();
+      fetchAllGroupConversationInfo();
+      fetchAllConversations();
     }
-
-    // Cleanup: Remove event listeners when the component is unmounted
-    return () => {
-      if (connection) {
-        connection.off("ReceiveMessage");
-        connection.off("UserConnected");
-        connection.off("UserDisconnected");
-      }
-    };
   }, [connection]);
 
   useEffect(() => {
@@ -388,7 +301,8 @@ function Chat() {
               tempConversationName={tempConversationName}
               toggleConversation={toggleConversation}
               fetchAllConversations={fetchAllConversations}
-              // peerConnection={peerConnection}
+              // setRemoteStream={setRemoteStream}
+              // setStream={setStream}
             />
           </div>
         </Col>
