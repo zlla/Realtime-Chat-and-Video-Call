@@ -95,7 +95,7 @@ const Conversations = (props) => {
             style={{ border: "none" }}
           >
             <div
-              className={`d-flex align-items-start w-100 messenger-container`}
+              className={`d-flex align-items-start w-100`}
               onClick={(event) => handleClick(conversation, event)}
               onMouseEnter={(event) => handleMouseEnter(event)}
               onMouseLeave={(event) => handleMouseLeave(event)}

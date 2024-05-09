@@ -215,7 +215,10 @@ const SelectedConversation = (props) => {
   };
 
   return (
-    <div className="messenger-container">
+    <div
+      className="messenger-container"
+      style={{ minHeight: "100vh", maxHeight: "100vh" }}
+    >
       <div className="d-flex align-items-center justify-content-between my-2">
         <h4>{tempConversationName}</h4>
         {toggleConversation && (
@@ -236,15 +239,7 @@ const SelectedConversation = (props) => {
         )}
       </div>
 
-      <div
-        className={`messages-container ${
-          isUploading ||
-          (uploadedImageFileNames && uploadedImageFileNames.length > 0)
-            ? "input-up"
-            : ""
-        }`}
-        ref={messagesEndRef}
-      >
+      <div className={`messages-container`} ref={messagesEndRef}>
         {tempMessages.slice().map((message) => {
           if (message.messageType === "text") {
             return (
@@ -267,8 +262,7 @@ const SelectedConversation = (props) => {
                 </div>
               </div>
             );
-          }
-          if (message.messageType === "image") {
+          } else if (message.messageType === "image") {
             return (
               <div
                 key={message.id}
