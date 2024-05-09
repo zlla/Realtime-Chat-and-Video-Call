@@ -1,14 +1,15 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import PropTypes from "prop-types";
+import PropTypes, { any } from "prop-types";
 import { FaPhone, FaPaperPlane } from "react-icons/fa";
+import { IoIosMore } from "react-icons/io";
 import { TbPhotoUp } from "react-icons/tb";
 import { MdOutlineAddReaction } from "react-icons/md";
 import axios from "axios";
 
-import "../../styles/ComponentStyles/SelectedConversation.css";
-import { apiUrl } from "../../settings/support";
+import "../styles/selected-conversation.css";
+import { ChatContext } from "../../../App";
+import { apiUrl } from "../../../settings/support";
 import VideoCall from "./VideoCall";
-import { ChatContext } from "../../App";
 
 const SelectedConversation = (props) => {
   const {
@@ -18,6 +19,8 @@ const SelectedConversation = (props) => {
     signalRId,
     isGroup,
     fetchAllConversations,
+    toggleSetting,
+    setToggleSetting,
   } = props;
   const { connection } = useContext(ChatContext);
 
@@ -116,15 +119,20 @@ const SelectedConversation = (props) => {
       }
     };
 
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
-    }
+    // Scroll to bottom function
+    const scrollToBottom = () => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
+      }
+    };
 
     tempMessages.forEach((msg) => {
       if (msg.messageType === "image") {
         fetchImage(msg.content, msg.id);
       }
     });
+
+    scrollToBottom();
   }, [tempMessages]);
 
   const [progress, setProgress] = useState(0);
@@ -208,7 +216,7 @@ const SelectedConversation = (props) => {
 
   return (
     <div className="messenger-container">
-      <div className="d-flex align-items-center justify-content-between mb-3">
+      <div className="d-flex align-items-center justify-content-between my-2">
         <h4>{tempConversationName}</h4>
         {toggleConversation && (
           <div className="button-container">
@@ -216,104 +224,108 @@ const SelectedConversation = (props) => {
               <FaPhone className="call-icon" />
             </button>
             <VideoCall signalRId={signalRId} />
+            <button
+              className="btn btn-light mr-2 rounded-circle-btn"
+              onClick={() => {
+                setToggleSetting(toggleSetting ? false : true);
+              }}
+            >
+              <IoIosMore />
+            </button>
           </div>
         )}
       </div>
 
       <div
-        className="messages-container"
-        style={{
-          display: "flex",
-          flexDirection: "column-reverse",
-          height: "100%",
-          overflowY: "auto",
-        }}
+        className={`messages-container ${
+          isUploading ||
+          (uploadedImageFileNames && uploadedImageFileNames.length > 0)
+            ? "input-up"
+            : ""
+        }`}
+        ref={messagesEndRef}
       >
-        {tempMessages
-          .slice()
-          .reverse()
-          .map((message) => {
-            if (message.messageType === "text") {
-              return (
+        {tempMessages.slice().map((message) => {
+          if (message.messageType === "text") {
+            return (
+              <div
+                key={message.id}
+                className={`message-container d-flex ${
+                  message.senderName === username
+                    ? "justify-content-end"
+                    : "justify-content-start"
+                }`}
+              >
                 <div
-                  key={message.id}
-                  className={`message-container d-flex ${
+                  className={`message ${
                     message.senderName === username
-                      ? "justify-content-end"
-                      : "justify-content-start"
+                      ? "my-message"
+                      : "other-message"
                   }`}
                 >
-                  <div
-                    className={`message ${
-                      message.senderName === username
-                        ? "my-message"
-                        : "other-message"
-                    }`}
-                    ref={messagesEndRef}
-                  >
-                    {message.content}
-                  </div>
+                  {message.content}
                 </div>
-              );
-            }
-            if (message.messageType === "image") {
-              return (
-                <div
-                  key={message.id}
-                  className={`message-container d-flex ${
-                    message.senderName === username
-                      ? "justify-content-end"
-                      : "justify-content-start"
-                  }`}
-                >
-                  <div>
-                    {imageUrls.map((item) => {
-                      if (item.messageId.toString() === message.id.toString()) {
-                        let divStyle;
-                        if (item.imgWidth > item.imgHeight) {
-                          divStyle = {
-                            width: 400,
-                            height: 250,
-                          };
-                        } else {
-                          divStyle = {
-                            width: 250,
-                            height: 350,
-                          };
-                        }
-
-                        return (
-                          <div key={item.messageId} style={divStyle}>
-                            <img
-                              src={item.imageUrl}
-                              width={"100%"}
-                              height={"100%"}
-                              style={{
-                                objectFit: "cover",
-                              }}
-                              alt="image"
-                            />
-                          </div>
-                        );
+              </div>
+            );
+          }
+          if (message.messageType === "image") {
+            return (
+              <div
+                key={message.id}
+                className={`message-container d-flex ${
+                  message.senderName === username
+                    ? "justify-content-end"
+                    : "justify-content-start"
+                }`}
+              >
+                <div>
+                  {imageUrls.map((item) => {
+                    if (item.messageId.toString() === message.id.toString()) {
+                      let divStyle;
+                      if (item.imgWidth > item.imgHeight) {
+                        divStyle = {
+                          width: 400,
+                          height: 250,
+                        };
+                      } else {
+                        divStyle = {
+                          width: 250,
+                          height: 350,
+                        };
                       }
-                    })}
-                  </div>
+
+                      return (
+                        <div key={item.messageId} style={divStyle}>
+                          <img
+                            src={item.imageUrl}
+                            width={"100%"}
+                            height={"100%"}
+                            style={{
+                              objectFit: "cover",
+                            }}
+                            alt="image"
+                          />
+                        </div>
+                      );
+                    }
+                  })}
                 </div>
-              );
-            } else if (message.messageType === "settings-conversationName") {
-              return (
-                <div key={message.id} className="settings-container">
-                  <span className="settings-message">{message.content}</span>
-                </div>
-              );
-            }
-          })}
+              </div>
+            );
+          } else if (message.messageType === "settings-conversationName") {
+            return (
+              <div key={message.id} className="settings-container">
+                <span className="settings-message">{message.content}</span>
+              </div>
+            );
+          }
+        })}
       </div>
 
       {toggleConversation && (
         <div>
           <div
-            className="input-container d-flex align-items-center"
+            className={`input-container d-flex align-items-center `}
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
           >
@@ -348,53 +360,55 @@ const SelectedConversation = (props) => {
                 }
               }}
               onPaste={(e) => handlePaste(e)}
-              className="form-control mb-2"
+              className="form-control"
               placeholder="Type your message"
             />
-            <div>
-              <button
-                className="btn btn-primary ml-2"
-                type="button"
-                onClick={() => {
-                  handleSendButton();
-                }}
-              >
-                <FaPaperPlane className="send-icon" />{" "}
-              </button>
-            </div>
+            <button
+              className=" ml-2"
+              type="button"
+              onClick={() => {
+                handleSendButton();
+              }}
+            >
+              <FaPaperPlane className="send-icon" />{" "}
+            </button>
           </div>
 
           {/* Image uploads */}
-          <div>
-            <div>{isUploading && <div>{progress}%</div>}</div>
+          {isUploading ||
+            (uploadedImageFileNames && uploadedImageFileNames.length > 0 && (
+              <div className="process-image-load">
+                <div>{isUploading && <div>{progress}%</div>}</div>
 
-            {uploadedImageFileNames && uploadedImageFileNames.length > 0 && (
-              <div>
-                <button
-                  className="btn btn-danger mb-2"
-                  onClick={() => setUploadedImageFileNames([])}
-                >
-                  Remove All
-                </button>
-                <div>
-                  {uploadedImageFileNames.map((uploadedImageFileName) => {
-                    return (
-                      <img
-                        key={uploadedImageFileName}
-                        src={`${apiUrl}/image/Uploads/${uploadedImageFileName}`}
-                        alt=""
-                        style={{
-                          width: 100,
-                          height: 100,
-                          objectFit: "contain",
-                        }}
-                      />
-                    );
-                  })}
-                </div>
+                {uploadedImageFileNames &&
+                  uploadedImageFileNames.length > 0 && (
+                    <div>
+                      <button
+                        className="btn btn-danger mb-2"
+                        onClick={() => setUploadedImageFileNames([])}
+                      >
+                        Remove All
+                      </button>
+                      <div>
+                        {uploadedImageFileNames.map((uploadedImageFileName) => {
+                          return (
+                            <img
+                              key={uploadedImageFileName}
+                              src={`${apiUrl}/image/Uploads/${uploadedImageFileName}`}
+                              alt=""
+                              style={{
+                                width: 100,
+                                height: 100,
+                                objectFit: "contain",
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
               </div>
-            )}
-          </div>
+            ))}
         </div>
       )}
     </div>
@@ -408,6 +422,8 @@ SelectedConversation.propTypes = {
   signalRId: PropTypes.string,
   isGroup: PropTypes.bool,
   fetchAllConversations: PropTypes.func,
+  toggleSetting: PropTypes.bool,
+  setToggleSetting: any,
 };
 
 export default SelectedConversation;

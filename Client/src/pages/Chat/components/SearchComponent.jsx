@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-import { apiUrl } from "../../settings/support";
+import { apiUrl } from "../../../settings/support";
 
 const SearchComponent = () => {
   const [keyword, setKeyword] = useState("");

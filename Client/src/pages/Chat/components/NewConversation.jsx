@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { array } from "prop-types";
-import { apiUrl } from "../../settings/support";
+import { apiUrl } from "../../../settings/support";
 
 const NewConversation = (props) => {
   const { duoConversationInfoList } = props;

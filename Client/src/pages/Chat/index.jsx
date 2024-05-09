@@ -1,22 +1,20 @@
+import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 import { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router";
-import "bootstrap/dist/css/bootstrap.min.css";
-import { Button, Container, Row, Col } from "react-bootstrap";
+import { Container, Row, Col } from "react-bootstrap";
 import { FaUserFriends, FaComments, FaPlus, FaCog } from "react-icons/fa";
 
-import "../styles/page/Chat.css";
-import { apiUrl } from "../settings/support";
-import NewConversation from "../components/chat/NewConversation";
-import Conversations from "../components/chat/Conversations";
-import SelectedConversation from "../components/chat/SelectedConversation";
-import People from "../components/chat/People";
-import ConversationSettings from "../components/chat/ConversationSettings";
-import { ChatContext } from "../App";
+import "./styles/style.css";
+import { apiUrl } from "../../settings/support";
+import NewConversation from "./components/NewConversation";
+import Conversations from "./components/Conversations";
+import SelectedConversation from "./components/SelectedConversation";
+import People from "./components/People";
+import ConversationSettings from "./components/ConversationSettings";
+import { ChatContext } from "../../App";
 
 function Chat() {
   const { connection } = useContext(ChatContext);
-  const navigate = useNavigate();
 
   const [duoConversationInfoList, setDuoConversationInfoList] = useState([]);
   const [groupConversationInfoList, setGroupConversationInfoList] = useState(
@@ -35,6 +33,8 @@ function Chat() {
   const [myNickname, setMyNickname] = useState("");
 
   const [activeTab, setActiveTab] = useState("conversation");
+
+  const [toggleSetting, setToggleSetting] = useState(false);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -197,16 +197,6 @@ function Chat() {
 
   return (
     <Container fluid>
-      <Button
-        style={{ marginTop: "20px" }}
-        variant="primary"
-        onClick={() => {
-          navigate("/");
-        }}
-      >
-        Home
-      </Button>
-
       <Row className="border-vertical">
         {/* Left Navbar (Part 1) */}
         <Col sm={12} md={1} className="navbar-col text-center">
@@ -291,7 +281,11 @@ function Chat() {
         </Col>
 
         {/* Selected Conversation (Part 3) */}
-        <Col sm={12} md={6} className="selected-col border-left">
+        <Col
+          sm={12}
+          md={toggleSetting ? 6 : 8}
+          className="selected-col border-left"
+        >
           <div>
             <SelectedConversation
               connection={connection}
@@ -301,14 +295,14 @@ function Chat() {
               tempConversationName={tempConversationName}
               toggleConversation={toggleConversation}
               fetchAllConversations={fetchAllConversations}
-              // setRemoteStream={setRemoteStream}
-              // setStream={setStream}
+              toggleSetting={toggleSetting}
+              setToggleSetting={setToggleSetting}
             />
           </div>
         </Col>
 
         {/* Settings Column (Part 4) */}
-        {toggleConversation && (
+        {toggleConversation && toggleSetting && (
           <Col sm={12} md={2} className="settings-col border-left">
             <div className="d-flex">
               <FaCog size={24} className="mx-3" />

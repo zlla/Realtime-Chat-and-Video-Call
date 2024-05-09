@@ -2,8 +2,8 @@ import { FaVideo } from "react-icons/fa";
 import { string } from "prop-types";
 import { useContext } from "react";
 
-import { configuration } from "../../settings/stun-turn-server-config";
-import { ChatContext } from "../../App";
+import { configuration } from "../../../settings/stun-turn-server-config";
+import { ChatContext } from "../../../App";
 
 const VideoCall = ({ signalRId }) => {
   const { peerRef, duoCallSignal, setStream, setRemoteStream } =

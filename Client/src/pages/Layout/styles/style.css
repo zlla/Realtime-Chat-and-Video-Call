@@ -1,0 +1,20 @@
+.draggable-video {
+  position: absolute;
+  cursor: move;
+  z-index: 1;
+}
+
+.layout-container {
+  position: relative;
+}
+
+.remote-video {
+  position: relative;
+}
+
+.local-video {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+}

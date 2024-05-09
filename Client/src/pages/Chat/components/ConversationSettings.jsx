@@ -2,7 +2,7 @@ import { bool, string } from "prop-types";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-import { apiUrl } from "../../settings/support";
+import { apiUrl } from "../../../settings/support";
 
 const ConversationSettings = (props) => {
   const { tempConversationId, tempConversationName, myNickname, isGroup } =

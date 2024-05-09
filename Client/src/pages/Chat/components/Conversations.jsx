@@ -2,7 +2,7 @@ import { any, array, func } from "prop-types";
 import { Card } from "react-bootstrap";
 import { useState } from "react";
 
-import "../../styles/ComponentStyles/Conversation.css";
+import "../styles/conversation.css";
 
 const Conversations = (props) => {
   const {

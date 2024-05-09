@@ -5,12 +5,12 @@ import * as signalR from "@microsoft/signalr";
 
 import { apiUrl } from "./settings/support";
 import { configuration } from "./settings/stun-turn-server-config";
-import Chat from "./pages/Chat";
-import Login from "./pages/auth/Login";
-import Layout from "./pages/Layout";
+import Error from "./pages/Error";
 import Home from "./pages/Home";
-import Register from "./pages/auth/Register";
-import ErrorPage from "./pages/ErrorPage";
+import Chat from "./pages/Chat";
+import Layout from "./pages/Layout";
+import Register from "./pages/Auth/Register";
+import Login from "./pages/Auth/Login";
 
 export const ChatContext = createContext(null);
 
@@ -233,7 +233,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<Layout stream={stream} remoteStream={remoteStream} />}>
-          <Route path="*" element={<ErrorPage />} />
+          <Route path="*" element={<Error />} />
           <Route path="/" element={<Home auth={auth} setAuth={setAuth} />} />
           <Route path="register" element={<Register />} />
           <Route path="login" element={<Login setAuth={setAuth} />} />
