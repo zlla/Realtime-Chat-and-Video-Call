@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Server.Helpers;
 using Server.Models;
-using Newtonsoft.Json;
 
 namespace Server.Hubs
 {
@@ -158,7 +157,45 @@ namespace Server.Hubs
             return Task.CompletedTask;
         }
 
-        public async Task<Task> MakeDuoCall(string receiverId, string offer)
+        public async Task<Task> CreateDuoCallConnection(string receiverId)
+        {
+            string senderId = Context.ConnectionId;
+
+            User? receiverRecord = await _db.Users.Where(u => u.Username == receiverId).FirstOrDefaultAsync();
+
+            if (receiverRecord != null)
+            {
+                long receiverUserId = receiverRecord.Id;
+
+                SignalRConnectionId? signalRConnectionId = await _db.SignalRConnectionIds
+                    .Where(s => s.UserId == receiverUserId)
+                    .OrderByDescending(s => s.CreationTime)
+                    .FirstOrDefaultAsync();
+
+                if (signalRConnectionId != null)
+                {
+                    await Clients.Client(signalRConnectionId.Value.ToString()).SendAsync("CreateDuoCallConnection", senderId);
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public async Task<Task> AcceptDuoCallConnection(string receiverId)
+        {
+            await Clients.Client(receiverId).SendAsync("AcceptDuoCallConnection");
+
+            return Task.CompletedTask;
+        }
+
+        public async Task<Task> RejectDuoCallConnection(string receiverId)
+        {
+            await Clients.Client(receiverId).SendAsync("RejectDuoCallConnection");
+
+            return Task.CompletedTask;
+        }
+
+        public async Task<Task> OfferDuoCall(string receiverId, string offer)
         {
             string senderId = Context.ConnectionId;
 
@@ -184,7 +221,7 @@ namespace Server.Hubs
 
                     if (signalRConnectionId != null)
                     {
-                        await Clients.Client(signalRConnectionId.Value.ToString()).SendAsync("DuoCallRequest", offer, senderId);
+                        await Clients.Client(signalRConnectionId.Value.ToString()).SendAsync("DuoCallOffer", offer, senderId);
                     }
                 }
             }

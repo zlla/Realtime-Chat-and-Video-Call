@@ -5,6 +5,7 @@ import * as signalR from "@microsoft/signalr";
 
 import { apiUrl } from "./settings/support";
 import { configuration } from "./settings/stun-turn-server-config";
+
 import Error from "./pages/Error";
 import Home from "./pages/Home";
 import Chat from "./pages/Chat";
@@ -19,11 +20,15 @@ function App() {
   const [token, setToken] = useState(initialToken);
   const [auth, setAuth] = useState(!!initialToken);
 
-  const [connection, setConnection] = useState(null);
-  const peerRef = useRef(null);
+  const [connection, setConnection] = useState(null); //SignalR connection
+  const peerRef = useRef(null); //Peer connection
 
   const [stream, setStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
+
+  const [incomeCall, setIncomeCall] = useState(false);
+  const [requestId, setRequestId] = useState("");
+  const [duoCallState, setDuoCallState] = useState("");
 
   const fetchNewToken = async () => {
     const accessToken = localStorage.getItem("accessToken");
@@ -47,16 +52,53 @@ function App() {
       setToken(null);
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
-      console.error(error);
     }
   };
+
+  const validateToken = useCallback(async () => {
+    try {
+      await axios.post(`${apiUrl}/auth/validateToken`, {
+        AccessToken: token,
+      });
+      setAuth(true);
+    } catch (error) {
+      setAuth(false);
+      console.log("Error during validation:", error);
+    }
+  }, [token]);
+
+  const saveSignalRId = useCallback(async (SId) => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    };
+
+    const bodyParameters = {
+      SId: SId,
+    };
+
+    try {
+      await axios.post(
+        `${apiUrl}/chatHub/saveSignalRId`,
+        bodyParameters,
+        config
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  }, []);
 
   const duoCallSignal = useCallback(
     async (method, id, paramString) => {
       if (!connection) return;
 
       try {
-        await connection.invoke(method, id, JSON.stringify(paramString));
+        if (paramString !== "") {
+          await connection.invoke(method, id, JSON.stringify(paramString));
+        } else {
+          await connection.invoke(method, id);
+        }
       } catch (error) {
         console.error(error.toString());
       }
@@ -64,7 +106,15 @@ function App() {
     [connection]
   );
 
-  const handleCallRequest = useCallback(
+  const handleNewIceCandidate = useCallback(async (candidate) => {
+    try {
+      await peerRef.current.addIceCandidate(JSON.parse(candidate));
+    } catch (error) {
+      // ignore
+    }
+  }, []);
+
+  const handleCallOffer = useCallback(
     async (offer, requestId) => {
       if (!peerRef.current) {
         peerRef.current = new RTCPeerConnection(configuration);
@@ -115,14 +165,6 @@ function App() {
     }
   }, []);
 
-  const handleNewIceCandidate = useCallback(async (candidate) => {
-    try {
-      await peerRef.current.addIceCandidate(JSON.parse(candidate));
-    } catch (error) {
-      console.error("Error adding ICE candidate:", error);
-    }
-  }, []);
-
   useEffect(() => {
     fetchNewToken();
 
@@ -145,46 +187,12 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const validateToken = async () => {
-      try {
-        await axios.post(`${apiUrl}/auth/validateToken`, {
-          AccessToken: token,
-        });
-        setAuth(true);
-      } catch (error) {
-        setAuth(false);
-        console.log("Error during validation:", error);
-      }
-    };
-
     if (token) {
       validateToken();
     }
-  }, [token]);
+  }, [token, validateToken]);
 
   useEffect(() => {
-    const saveSignalRId = async (SId) => {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-        },
-      };
-
-      const bodyParameters = {
-        SId: SId,
-      };
-
-      try {
-        await axios.post(
-          `${apiUrl}/chatHub/saveSignalRId`,
-          bodyParameters,
-          config
-        );
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
     if (connection) {
       connection
         .start()
@@ -202,21 +210,33 @@ function App() {
         connection.off("UserDisconnected");
       }
     };
-  }, [connection]);
+  }, [connection, saveSignalRId]);
 
   useEffect(() => {
     if (connection) {
-      connection.on(
-        "DuoCallRequest",
-        async (offer, requestId) => await handleCallRequest(offer, requestId)
-      );
+      connection.on("CreateDuoCallConnection", (requestId) => {
+        setIncomeCall(true);
+        setRequestId(requestId);
+      });
 
-      connection.on("DuoCallAnswer", async (answer) => {
-        await handleCallAnswer(answer);
+      connection.on("AcceptDuoCallConnection", () => {
+        setDuoCallState("remoteAccepted");
+      });
+
+      connection.on("RejectDuoCallConnection", () => {
+        setDuoCallState("remoteRejected");
       });
 
       connection.on("NewIceCandidate", async (candidate) => {
         await handleNewIceCandidate(candidate);
+      });
+
+      connection.on("DuoCallOffer", async (offer, requestId) => {
+        await handleCallOffer(offer, requestId);
+      });
+
+      connection.on("DuoCallAnswer", async (answer) => {
+        await handleCallAnswer(answer);
       });
     }
   }, [
@@ -224,15 +244,35 @@ function App() {
     peerRef,
     stream,
     duoCallSignal,
-    handleCallRequest,
+    handleCallOffer,
     handleCallAnswer,
     handleNewIceCandidate,
   ]);
 
+  useEffect(() => {
+    if (duoCallState === "accepted") {
+      duoCallSignal("AcceptDuoCallConnection", requestId, "");
+    } else if (duoCallState === "rejected") {
+      duoCallSignal("RejectDuoCallConnection", requestId, "");
+    }
+
+    setDuoCallState("");
+  }, [duoCallSignal, duoCallState, requestId]);
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<Layout stream={stream} remoteStream={remoteStream} />}>
+        <Route
+          element={
+            <Layout
+              stream={stream}
+              remoteStream={remoteStream}
+              incomeCall={incomeCall}
+              setIncomeCall={setIncomeCall}
+              setDuoCallState={setDuoCallState}
+            />
+          }
+        >
           <Route path="*" element={<Error />} />
           <Route path="/" element={<Home auth={auth} setAuth={setAuth} />} />
           <Route path="register" element={<Register />} />
@@ -248,6 +288,8 @@ function App() {
                     duoCallSignal,
                     setStream,
                     setRemoteStream,
+                    duoCallState,
+                    setDuoCallState,
                   }}
                 >
                   <Chat auth={auth} />

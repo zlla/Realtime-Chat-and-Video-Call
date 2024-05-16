@@ -2,7 +2,11 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 import { useContext, useEffect, useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
-import { FaUserFriends, FaComments, FaPlus, FaCog } from "react-icons/fa";
+import {
+  IoCreateOutline,
+  IoPeopleOutline,
+  IoChatbubblesOutline,
+} from "react-icons/io5";
 
 import "./styles/style.css";
 import { apiUrl } from "../../settings/support";
@@ -207,7 +211,7 @@ function Chat() {
               }`}
               onClick={() => handleTabChange("newConversation")}
             >
-              <FaPlus size={35} className="mx-auto" />
+              <IoCreateOutline className="mx-auto" size={42} />
               {/* <div>New Chat</div> */}
             </div>
             <div
@@ -216,7 +220,7 @@ function Chat() {
               }`}
               onClick={() => handleTabChange("conversation")}
             >
-              <FaComments size={35} className="mx-auto" />
+              <IoChatbubblesOutline className="mx-auto" size={42} />
               {/* <div>Chats</div> */}
             </div>
             <div
@@ -225,7 +229,7 @@ function Chat() {
               }`}
               onClick={() => handleTabChange("people")}
             >
-              <FaUserFriends size={35} className="mx-auto" />
+              <IoPeopleOutline className="mx-auto" size={42} />
               {/* <div>People</div> */}
             </div>
           </div>
@@ -305,7 +309,6 @@ function Chat() {
         {toggleConversation && toggleSetting && (
           <Col sm={12} md={2} className="settings-col border-left">
             <div className="d-flex">
-              <FaCog size={24} className="mx-3" />
               <h4>Settings</h4>
             </div>
 

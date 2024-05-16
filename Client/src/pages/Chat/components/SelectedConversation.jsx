@@ -239,7 +239,7 @@ const SelectedConversation = (props) => {
         )}
       </div>
 
-      <div className={`messages-container`} ref={messagesEndRef}>
+      <div className="messages-container" ref={messagesEndRef}>
         {tempMessages.slice().map((message) => {
           if (message.messageType === "text") {
             return (
@@ -296,6 +296,7 @@ const SelectedConversation = (props) => {
                             height={"100%"}
                             style={{
                               objectFit: "cover",
+                              borderRadius: "12px",
                             }}
                             alt="image"
                           />

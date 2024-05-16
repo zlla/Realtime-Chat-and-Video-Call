@@ -1,15 +1,25 @@
 import { FaVideo } from "react-icons/fa";
 import { string } from "prop-types";
-import { useContext } from "react";
+import { useCallback, useContext, useEffect } from "react";
 
 import { configuration } from "../../../settings/stun-turn-server-config";
 import { ChatContext } from "../../../App";
 
 const VideoCall = ({ signalRId }) => {
-  const { peerRef, duoCallSignal, setStream, setRemoteStream } =
-    useContext(ChatContext);
+  const {
+    peerRef,
+    duoCallSignal,
+    setStream,
+    setRemoteStream,
+    duoCallState,
+    setDuoCallState,
+  } = useContext(ChatContext);
 
-  async function makeCall() {
+  const handleVideoCallBtnClick = async () => {
+    duoCallSignal("CreateDuoCallConnection", signalRId, "");
+  };
+
+  const makeCall = useCallback(async () => {
     const pc = new RTCPeerConnection(configuration);
     peerRef.current = pc;
 
@@ -36,12 +46,26 @@ const VideoCall = ({ signalRId }) => {
     const offer = await peerRef.current.createOffer();
     await peerRef.current.setLocalDescription(offer);
 
-    duoCallSignal("MakeDuoCall", signalRId, peerRef.current.localDescription);
-  }
+    duoCallSignal("OfferDuoCall", signalRId, peerRef.current.localDescription);
+  }, [duoCallSignal, peerRef, setRemoteStream, setStream, signalRId]);
 
-  const handleVideoCallBtnClick = async () => {
-    makeCall();
-  };
+  useEffect(() => {
+    if (duoCallState === "remoteAccepted") {
+      makeCall();
+    } else if (duoCallState === "remoteRejected") {
+      console.log("Your friend have rejected your request");
+    }
+
+    setDuoCallState("");
+  }, [duoCallState, makeCall, setDuoCallState]);
+
+  // const stopBothVideoAndAudio = useCallback((stream) => {
+  //   stream.getTracks().forEach((track) => {
+  //     if (track.readyState == "live") {
+  //       track.stop();
+  //     }
+  //   });
+  // }, []);
 
   return (
     <>

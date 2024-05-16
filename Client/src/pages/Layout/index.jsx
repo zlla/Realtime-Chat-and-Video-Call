@@ -1,25 +1,57 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
+import { Toast } from "primereact/toast";
+
 import { Outlet } from "react-router-dom";
 import "./styles/style.css";
-import { any } from "prop-types";
+import { any, bool } from "prop-types";
 
-const Layout = ({ stream, remoteStream }) => {
+const Layout = ({
+  stream,
+  remoteStream,
+  incomeCall,
+  setIncomeCall,
+  setDuoCallState,
+}) => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const videoContainerRef = useRef(null);
   const dragObject = useRef(null);
+  const toast = useRef(null);
 
-  useEffect(() => {
-    if (stream && localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-    }
-  }, [stream]);
+  const accept = useCallback(() => {
+    toast.current.show({
+      severity: "info",
+      summary: "Confirmed",
+      detail: "You have accepted",
+      life: 3000,
+    });
+    setDuoCallState("accepted");
+  }, [setDuoCallState]);
 
-  useEffect(() => {
-    if (remoteStream && remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = remoteStream;
-    }
-  }, [remoteStream]);
+  const reject = useCallback(() => {
+    toast.current.show({
+      severity: "warn",
+      summary: "Rejected",
+      detail: "You have rejected",
+      life: 3000,
+    });
+    setDuoCallState("rejected");
+  }, [setDuoCallState]);
+
+  const confirm = useCallback(
+    (position) => {
+      confirmDialog({
+        message: "You have a video call",
+        header: "Calling ...",
+        icon: "pi pi-info-circle",
+        position,
+        accept,
+        reject,
+      });
+    },
+    [accept, reject]
+  );
 
   const handleMouseDown = (e) => {
     dragObject.current = {
@@ -54,6 +86,18 @@ const Layout = ({ stream, remoteStream }) => {
   };
 
   useEffect(() => {
+    if (stream && localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+    }
+  }, [stream]);
+
+  useEffect(() => {
+    if (remoteStream && remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
+
+  useEffect(() => {
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
     return () => {
@@ -62,8 +106,18 @@ const Layout = ({ stream, remoteStream }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (incomeCall) {
+      confirm("top-right");
+      setIncomeCall(false);
+    }
+  }, [confirm, incomeCall, setIncomeCall]);
+
   return (
     <div className="layout-container">
+      <Toast ref={toast} />
+      <ConfirmDialog />
+
       <div
         ref={videoContainerRef}
         className="video-container draggable-video"
@@ -88,6 +142,9 @@ const Layout = ({ stream, remoteStream }) => {
 Layout.propTypes = {
   stream: any,
   remoteStream: any,
+  incomeCall: bool,
+  setIncomeCall: any,
+  setDuoCallState: any,
 };
 
 export default Layout;
